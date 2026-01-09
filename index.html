@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Production Planner (Manual Map)</title>
+    <title>Production Planner (Line Wise)</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -15,21 +15,20 @@
         .row-alternate { background-color: #fff8e1; color: #8a6d3b; }
         .val-negative { color: #dc3545; font-weight: bold; }
         .val-positive { color: #198754; font-weight: bold; }
-        .preview-table th, .preview-table td { font-size: 12px; padding: 4px; }
-        .preview-box { background: #e9ecef; padding: 15px; border-radius: 8px; display: none; margin-top: 15px; }
+        .queue-box { background: #e7f1ff; padding: 15px; border-radius: 8px; border: 1px solid #b6d4fe; }
     </style>
 </head>
 <body>
 
-<div id="loader" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); z-index:9999; text-align:center; padding-top:20%;">
+<div id="loader" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); z-index:9999; text-align:center; padding-top:20%;">
     <div class="spinner-border text-primary" style="width: 4rem; height: 4rem;"></div>
-    <h3 class="mt-3">Processing...</h3>
+    <h3 class="mt-3" id="loaderText">Processing...</h3>
 </div>
 
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="text-primary fw-bold">Production Inventory Matcher</h2>
-        <button class="btn btn-outline-secondary btn-sm" onclick="fetchUploadedList()">🔄 Refresh List</button>
+        <h2 class="text-primary fw-bold">Production Planner (Line-Wise Stock)</h2>
+        <button class="btn btn-outline-secondary btn-sm" onclick="fetchUploadedList()">🔄 Refresh Cloud List</button>
     </div>
 
     <!-- TABS -->
@@ -69,87 +68,109 @@
                     <input type="file" class="form-control" id="bomFile">
                 </div>
                 <div class="col-12 text-center mt-3">
-                    <button class="btn btn-primary btn-lg px-5" onclick="uploadBOM()">Upload BOM</button>
+                    <button class="btn btn-primary btn-lg px-5" onclick="uploadBOM()">Upload & Save BOM</button>
                 </div>
             </div>
             <div id="bomMsg" class="mt-3 text-center fw-bold"></div>
         </div>
 
-        <!-- TAB 2: UPLOAD SAP (MANUAL MAPPING) -->
+        <!-- TAB 2: UPLOAD SAP -->
         <div class="tab-pane fade" id="tab2">
             <div class="row justify-content-center">
-                <div class="col-md-10">
-                    <label class="fw-bold mb-2">SAP Inventory File</label>
+                <div class="col-md-11">
+                    <label class="fw-bold mb-2">SAP Inventory File (Must have Storage Location)</label>
                     <input type="file" class="form-control mb-3" id="sapFile" onchange="previewSAP(this)">
                     
-                    <!-- PREVIEW BOX -->
-                    <div id="sapPreviewBox" class="preview-box">
-                        <h5 class="text-danger fw-bold">Manual Mapping (Select Correct Columns)</h5>
-                        <p class="small text-muted">Niche table dekhein aur batayein ki Part Code aur Stock kis column mein hain.</p>
-                        
-                        <div class="row g-3 mb-3">
-                            <div class="col-md-5">
-                                <label class="fw-bold">Part Code Column:</label>
+                    <div id="sapPreviewBox" style="display:none; background:#f8f9fa; padding:15px; border-radius:8px;">
+                        <h6 class="text-danger fw-bold">Map 3 Columns (Part, Stock & Line):</h6>
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-3">
+                                <label class="small fw-bold">Part Code (Material)</label>
                                 <select id="sapColPart" class="form-select"></select>
                             </div>
-                            <div class="col-md-5">
-                                <label class="fw-bold">Stock Qty Column:</label>
+                            <div class="col-md-3">
+                                <label class="small fw-bold">Stock Qty (Unrestricted)</label>
                                 <select id="sapColStock" class="form-select"></select>
                             </div>
-                            <div class="col-md-2 d-flex align-items-end">
-                                <button class="btn btn-warning w-100 fw-bold" onclick="confirmSAPUpload()">Confirm & Load</button>
+                            <div class="col-md-3">
+                                <label class="small fw-bold">Line (Storage Loc)</label>
+                                <select id="sapColLine" class="form-select"></select>
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button class="btn btn-warning w-100" onclick="confirmSAPUpload()">Confirm & Load</button>
                             </div>
                         </div>
-
-                        <div class="table-responsive bg-white border">
-                            <table class="table table-sm table-bordered preview-table mb-0" id="sapPreviewTable">
-                                <!-- JS will fill this -->
-                            </table>
+                        <div class="table-responsive bg-white border" style="max-height:150px;">
+                            <table class="table table-sm table-bordered mb-0" id="sapPreviewTable"></table>
                         </div>
                     </div>
-
                 </div>
             </div>
             <div id="sapMsg" class="mt-3 text-center fw-bold"></div>
         </div>
 
-        <!-- TAB 3: CALCULATION -->
+        <!-- TAB 3: PRODUCTION PLAN (MULTI) -->
         <div class="tab-pane fade" id="tab3">
-            <div class="card bg-light p-3 mb-3 border-0">
-                <div class="row g-3 align-items-end">
-                    <div class="col-md-3">
-                        <label class="fw-bold">Model</label>
-                        <input class="form-control" list="modelListOptions" id="planModel" placeholder="Search Model...">
+            
+            <!-- ADD TO QUEUE -->
+            <div class="queue-box mb-3">
+                <h5 class="fw-bold text-primary mb-3">Plan Jobs (Line Specific)</h5>
+                <div class="row g-3">
+                    <div class="col-md-2">
+                        <label class="fw-bold small">Product Type</label>
+                        <select class="form-select form-select-sm" id="planProduct" onchange="updateLines()">
+                            <option value="">Select</option>
+                            <option value="Earbuds">Earbuds</option>
+                            <option value="Charging Case">Charging Case</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="fw-bold small">Select Line (e.g. 9B01)</label>
+                        <select class="form-select form-select-sm" id="planLine"><option value="">-</option></select>
                     </div>
                     <div class="col-md-3">
-                        <label class="fw-bold">Color</label>
-                        <select class="form-select" id="planColor"><option value="">Select Color</option></select>
+                        <label class="fw-bold small">Model</label>
+                        <input class="form-control form-control-sm" list="modelListOptions" id="planModel" placeholder="Search..." onchange="updateColors('plan')">
                     </div>
                     <div class="col-md-3">
-                        <label class="fw-bold">WIP Quantity</label>
-                        <input type="number" class="form-control" id="wipQty" placeholder="500">
+                        <label class="fw-bold small">Color</label>
+                        <select class="form-select form-select-sm" id="planColor"><option value="">-</option></select>
                     </div>
-                    <div class="col-md-3">
-                        <button class="btn btn-success w-100 fw-bold" onclick="calculate()">Calculate</button>
+                    <div class="col-md-2">
+                        <label class="fw-bold small">WIP Qty</label>
+                        <div class="input-group input-group-sm">
+                            <input type="number" class="form-control" id="planQty" placeholder="0">
+                            <button class="btn btn-primary" onclick="addToQueue()">+ Add</button>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <h5 id="resTitle" class="m-0">Shortage Report</h5>
-                <button class="btn btn-dark btn-sm" onclick="downloadExcel()">Download Excel</button>
+            <!-- QUEUE TABLE -->
+            <div class="mb-3">
+                <h6 class="fw-bold">Job Queue</h6>
+                <table class="table table-sm table-bordered" id="queueTable">
+                    <thead class="table-light"><tr><th>Line</th><th>Model</th><th>Color</th><th>Qty</th><th>Action</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+                <button class="btn btn-success w-100 fw-bold" onclick="calculateTotalShortage()">Generate Consolidated Report</button>
             </div>
-            
+
+            <!-- RESULT TABLE -->
             <div class="table-responsive">
-                <table class="table table-bordered table-hover" id="resTable">
-                    <thead class="table-dark">
+                <div class="d-flex justify-content-between align-items-center bg-dark text-white p-2 mb-0">
+                    <h6 class="m-0">Shortage Report (Matched by Line)</h6>
+                    <button class="btn btn-light btn-sm py-0" onclick="downloadExcel()">Download</button>
+                </div>
+                <table class="table table-bordered table-hover mt-0" id="resTable">
+                    <thead class="table-secondary">
                         <tr>
-                            <th style="width: 50px;">Prio</th>
+                            <th>Priority</th>
                             <th>Part Code</th>
                             <th>Description</th>
                             <th>QPA</th>
-                            <th>Required (0 & 1)</th>
-                            <th>SAP Stock</th>
+                            <th>Total Required</th>
+                            <th>Relevant SAP Stock</th>
                             <th>Difference</th>
                         </tr>
                     </thead>
@@ -163,23 +184,26 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    // ⚠️⚠️ APNA GOOGLE SCRIPT URL YAHAN PASTE KAREIN ⚠️⚠️
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyNx4R60zA1gMpg5rpJJR3UGzk0DQOyphbyYw2-0Rw4hnuA5wkKvW95dTo70OKUikEwTg/exec"; 
+    // ⚠️⚠️ PASTE YOUR GOOGLE SCRIPT URL HERE ⚠️⚠️
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz5_UxG8d6_ncMMWntP5dkv0N-IIW8LU3kKg2Uyb2s7C7MLVGM1jQzPVRFM-QygIFzieA/exec"; 
+
+    // --- LINE DATA (Earbuds = 9B.., Case = 9C..) ---
+    const lineData = {
+        "Earbuds": Array.from({length: 24}, (_, i) => `9B${String(i+1).padStart(2, '0')}`),
+        "Charging Case": Array.from({length: 24}, (_, i) => `9C${String(i+1).padStart(2, '0')}`)
+    };
 
     // --- VARIABLES ---
-    let currentBOM = []; 
-    let sapData = {};    
-    let sapRawData = []; // To hold data for manual mapping
+    let sapData = {}; // Now stores { PartCode: { Line1: Qty, Line2: Qty } }
+    let sapRawData = [];
+    let productionQueue = []; 
     let finalResults = [];
 
-    // --- SUPER CLEANER ---
-    function cleanKey(val) {
-        if(!val) return "";
-        return String(val).replace(/[\s\u00A0]+/g, "").toUpperCase().trim();
-    }
+    // --- CLEANER ---
+    function cleanKey(val) { return String(val).replace(/[\s\u00A0]+/g, "").toUpperCase().trim(); }
 
     // --- INITIALIZATION ---
-    const rawModelList = ["Ad131|Black", "Ad 91|MistGrey", "Ad 800 Hidef|Graphite Grey"]; // Add more
+    const rawModelList = ["Ad131|Black", "Ad 91|MistGrey", "Ad 91|Black", "Ad 800 Hidef|Graphite Grey"]; 
     const modelMap = {};
     rawModelList.forEach(item => {
         const [model, color] = item.split('|');
@@ -190,7 +214,6 @@
     window.onload = function() {
         populateDatalist();
         document.getElementById('upModel').addEventListener('input', () => updateColors('up'));
-        document.getElementById('planModel').addEventListener('input', () => updateColors('plan'));
         fetchUploadedList();
     };
 
@@ -208,102 +231,63 @@
         else sel.innerHTML = '<option value="">New Model Detected</option>';
     }
 
+    function updateLines() {
+        const type = document.getElementById('planProduct').value;
+        const lineSel = document.getElementById('planLine');
+        lineSel.innerHTML = '<option value="">Select Line</option>';
+        if(lineData[type]) {
+            lineData[type].forEach(line => lineSel.add(new Option(line, line)));
+        }
+    }
+
     function fetchUploadedList() {
         const listContainer = document.getElementById('uploadedList');
-        fetch(SCRIPT_URL)
-        .then(response => response.json())
+        fetch(`${SCRIPT_URL}?action=list`)
+        .then(res => res.json())
         .then(data => {
-            if(!data || data.length === 0) return listContainer.innerHTML = '<div class="alert alert-warning">No BOMs found.</div>';
             let html = '';
-            data.forEach(name => html += `<a href="#" class="list-group-item list-group-item-action">✅ ${name}</a>`);
-            listContainer.innerHTML = html;
+            data.forEach(name => html += `<a href="#" class="list-group-item list-group-item-action py-1">✅ ${name}</a>`);
+            listContainer.innerHTML = html || 'No BOMs found.';
         });
     }
 
-    // --- 1. UPLOAD BOM (Auto) ---
+    // --- 1. UPLOAD BOM ---
     function uploadBOM() {
         const model = document.getElementById('upModel').value;
         const color = document.getElementById('upColor').value;
         const fileInput = document.getElementById('bomFile');
-        if(!model || !fileInput.files[0]) return alert("Select Model & File");
+        if(!model || !fileInput.files[0]) return alert("Missing Info");
 
         const reader = new FileReader();
         reader.onload = function(e) {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, {type: 'array'});
             const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1});
-
-            let cols = { partCode: -1, qpa: -1, desc: -1, priority: -1 };
-            let startRow = 1;
-
-            for(let i=0; i < Math.min(25, jsonData.length); i++) {
-                const row = jsonData[i].map(x => String(x).toLowerCase().trim());
-                if (row.some(c => c.includes("component") || c.includes("material"))) {
-                    cols.partCode = row.findIndex(c => c.includes("component") || c.includes("material") || c.includes("item code"));
-                    cols.qpa = row.findIndex(c => c === "qpa" || c.includes("qty"));
-                    cols.priority = row.findIndex(c => c.includes("priority"));
-                    cols.desc = row.findIndex(c => c.includes("description") || c.includes("desc"));
-                    startRow = i + 1;
-                    break;
-                }
-            }
-
-            if(cols.partCode === -1) cols = { partCode: 2, qpa: 5, desc: 3, priority: 8 };
-
-            currentBOM = [];
-            for(let i = startRow; i < jsonData.length; i++) {
-                let r = jsonData[i];
-                if(r[cols.partCode]) {
-                    let prio = 0;
-                    if(cols.priority > -1 && r[cols.priority] !== undefined) prio = parseInt(r[cols.priority]) || 0;
-                    currentBOM.push({
-                        partCode: r[cols.partCode], 
-                        cleanCode: cleanKey(r[cols.partCode]), 
-                        partName: cols.desc > -1 ? r[cols.desc] : "",
-                        qpa: parseFloat(r[cols.qpa]) || 0,
-                        priority: prio
-                    });
-                }
-            }
             sendToCloud({ type: 'bom', model: model, color: color, rows: jsonData }, 'bomMsg');
         };
         reader.readAsArrayBuffer(fileInput.files[0]);
     }
 
-    // --- 2. PREVIEW SAP (Manual Mapping Step) ---
+    // --- 2. UPLOAD SAP (LINE WISE MAPPING) ---
     function previewSAP(input) {
         if(!input.files[0]) return;
         const reader = new FileReader();
         reader.onload = function(e) {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, {type: 'array'});
-            // Load ALL data
             sapRawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1});
             
-            // Show Preview UI
             document.getElementById('sapPreviewBox').style.display = 'block';
             const table = document.getElementById('sapPreviewTable');
             table.innerHTML = '';
-
-            // Generate Headers for Select
-            const colSelects = [document.getElementById('sapColPart'), document.getElementById('sapColStock')];
+            const colSelects = [document.getElementById('sapColPart'), document.getElementById('sapColStock'), document.getElementById('sapColLine')];
             colSelects.forEach(sel => sel.innerHTML = '<option value="-1">Select...</option>');
 
-            // Render First 5 Rows
-            for(let i=0; i < Math.min(5, sapRawData.length); i++) {
+            for(let i=0; i < Math.min(3, sapRawData.length); i++) {
                 let tr = document.createElement('tr');
                 sapRawData[i].forEach((cell, idx) => {
-                    let td = document.createElement(i===0 ? 'th' : 'td');
-                    td.innerText = cell;
-                    tr.appendChild(td);
-                    
-                    // Add column options (only once)
-                    if(i === 0) {
-                        colSelects.forEach(sel => {
-                            let opt = new Option(`Col ${idx+1}: ${cell}`, idx);
-                            sel.add(opt);
-                        });
-                    }
+                    let td = document.createElement(i===0 ? 'th' : 'td'); td.innerText = cell; tr.appendChild(td);
+                    if(i===0) colSelects.forEach(sel => sel.add(new Option(`Col ${idx+1}: ${cell}`, idx)));
                 });
                 table.appendChild(tr);
             }
@@ -311,36 +295,183 @@
         reader.readAsArrayBuffer(input.files[0]);
     }
 
-    // --- 3. CONFIRM & LOAD SAP ---
     function confirmSAPUpload() {
         const cIdx = parseInt(document.getElementById('sapColPart').value);
         const sIdx = parseInt(document.getElementById('sapColStock').value);
+        const lIdx = parseInt(document.getElementById('sapColLine').value); // New Line Index
 
-        if(cIdx === -1 || sIdx === -1) return alert("Please select both Part Code and Stock columns!");
+        if(cIdx === -1 || sIdx === -1 || lIdx === -1) return alert("Select Part, Stock AND Storage Location columns!");
 
-        sapData = {};
+        sapData = {}; 
         let count = 0;
-
-        // Start from row 1 (assuming row 0 is header)
+        
         for(let i=1; i < sapRawData.length; i++) {
             let r = sapRawData[i];
             if(r[cIdx]) {
-                let key = cleanKey(r[cIdx]); // Cleaning is key!
+                let partKey = cleanKey(r[cIdx]);
+                let lineKey = cleanKey(r[lIdx]); // e.g., "9B01"
                 let val = parseFloat(r[sIdx]) || 0;
                 
-                if(sapData[key]) sapData[key] += val;
-                else sapData[key] = val;
+                // Structure: sapData["PART"]["9B01"] = 500
+                if(!sapData[partKey]) sapData[partKey] = {};
+                
+                if(sapData[partKey][lineKey]) sapData[partKey][lineKey] += val;
+                else sapData[partKey][lineKey] = val;
+                
                 count++;
             }
         }
-
         document.getElementById('sapPreviewBox').style.display = 'none';
-        alert(`Success! Loaded ${count} items from SAP based on your selection.`);
+        alert(`SAP Loaded! Mapped ${count} items across lines.`);
         sendToCloud({ type: 'sap', rows: sapRawData }, 'sapMsg');
     }
 
+    // --- 3. QUEUE LOGIC ---
+    function addToQueue() {
+        const line = document.getElementById('planLine').value;
+        const model = document.getElementById('planModel').value;
+        const color = document.getElementById('planColor').value;
+        const qty = parseFloat(document.getElementById('planQty').value);
+
+        if(!line || !model || !color || !qty) return alert("Fill all fields");
+
+        productionQueue.push({line, model, color, qty});
+        renderQueue();
+    }
+
+    function renderQueue() {
+        const tbody = document.querySelector('#queueTable tbody');
+        tbody.innerHTML = '';
+        productionQueue.forEach((item, index) => {
+            tbody.innerHTML += `<tr><td>${item.line}</td><td>${item.model}</td><td>${item.color}</td><td>${item.qty}</td><td><button class="btn btn-danger btn-sm py-0" onclick="removeFromQueue(${index})">X</button></td></tr>`;
+        });
+    }
+
+    function removeFromQueue(idx) { productionQueue.splice(idx, 1); renderQueue(); }
+
+    // --- 4. CONSOLIDATED CALCULATION (LINE AWARE) ---
+    async function calculateTotalShortage() {
+        if(productionQueue.length === 0) return alert("Queue is empty");
+        if(Object.keys(sapData).length === 0) return alert("Load SAP first");
+
+        document.getElementById('loader').style.display = 'block';
+        document.getElementById('loaderText').innerText = "Fetching BOMs...";
+        
+        // Structure: { PART_KEY: { req: 0, stockAvailable: 0, details: {...} } }
+        let consolidatedParts = {}; 
+
+        // Step 1: Calculate Requirements Line-by-Line
+        // Since different jobs might use the SAME part on DIFFERENT lines,
+        // we first group requirements by Part + Line.
+        let tempRequirements = {}; // { PART_KEY: { "9B01": 500, "9B02": 300 } }
+
+        for(let job of productionQueue) {
+            const sheetName = `${job.model.replace(/[\/\\?%*:|"<>]/g, "")} - ${job.color.replace(/[\/\\?%*:|"<>]/g, "")}`;
+            
+            try {
+                const response = await fetch(`${SCRIPT_URL}?action=getBOM&sheetName=${encodeURIComponent(sheetName)}`);
+                const bomData = await response.json();
+
+                if(!bomData || bomData.length === 0) continue;
+
+                // Simple Header Scan for BOM
+                let cols = { partCode: -1, qpa: -1, desc: -1, priority: -1 };
+                for(let i=0; i < Math.min(25, bomData.length); i++) {
+                    const row = bomData[i].map(x => String(x).toLowerCase().trim());
+                    if (row.some(c => c.includes("component") || c.includes("item code"))) {
+                        cols.partCode = row.findIndex(c => c.includes("component") || c.includes("item code"));
+                        cols.qpa = row.findIndex(c => c === "qpa" || c.includes("qty"));
+                        cols.priority = row.findIndex(c => c.includes("priority"));
+                        cols.desc = row.findIndex(c => c.includes("desc"));
+                        break;
+                    }
+                }
+                if(cols.partCode === -1) cols = { partCode: 2, qpa: 5, desc: 3, priority: 8 };
+
+                for(let i=0; i<bomData.length; i++) {
+                    let r = bomData[i];
+                    if(r[cols.partCode]) {
+                        let pCode = r[cols.partCode];
+                        let cleanPCode = cleanKey(pCode);
+                        let qpa = parseFloat(r[cols.qpa]) || 0;
+                        let prio = (cols.priority > -1 && r[cols.priority] !== undefined) ? parseInt(r[cols.priority]) : 0;
+                        
+                        // Running Parts only (0 & 1)
+                        if(prio === 0 || prio === 1) {
+                            let req = qpa * job.qty;
+                            
+                            // Initialize map
+                            if(!tempRequirements[cleanPCode]) tempRequirements[cleanPCode] = { reqs: {}, details: { original: pCode, desc: r[cols.desc] || "", qpa: qpa, prio: prio } };
+                            
+                            // Add requirement specific to this Job's Line (e.g., 9B01)
+                            if(!tempRequirements[cleanPCode].reqs[job.line]) tempRequirements[cleanPCode].reqs[job.line] = 0;
+                            tempRequirements[cleanPCode].reqs[job.line] += req;
+                        } else {
+                             // Track Alternates too (Req 0)
+                            if(!tempRequirements[cleanPCode]) tempRequirements[cleanPCode] = { reqs: {}, details: { original: pCode, desc: r[cols.desc] || "", qpa: qpa, prio: prio } };
+                        }
+                    }
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        // Step 2: Match with SAP Stock Line-by-Line
+        finalResults = [];
+        const tbody = document.querySelector('#resTable tbody');
+        tbody.innerHTML = '';
+
+        Object.keys(tempRequirements).forEach(partKey => {
+            let partData = tempRequirements[partKey];
+            
+            let totalReq = 0;
+            let totalStockUsed = 0;
+
+            // Iterate over lines where this part is needed
+            // If it's an alternate (Req=0), we still check all lines in queue? 
+            // Better: Sum up Req across all lines, Sum up Stock across RELEVANT lines.
+            
+            // Loop through the lines we recorded requirements for
+            // If it is alternate, reqs is empty, so loop wont run.
+            let linesChecked = Object.keys(partData.reqs);
+            
+            if(linesChecked.length === 0) {
+                // Alternate part case: Show Total Stock from ALL lines in SAP? Or just 0?
+                // Let's show Total Available Stock across matched lines in queue? 
+                // Simple approach: Show 0 req, and Stock = 0 (or total). Let's do 0 for now.
+            } else {
+                linesChecked.forEach(line => {
+                    totalReq += partData.reqs[line];
+                    
+                    // Look up stock SPECIFICALLY for this line
+                    if(sapData[partKey] && sapData[partKey][line]) {
+                        totalStockUsed += sapData[partKey][line];
+                    }
+                });
+            }
+
+            let diff = totalStockUsed - totalReq;
+            let isRunning = (partData.details.prio === 0 || partData.details.prio === 1);
+            let diffClass = '';
+            if(diff < 0) diffClass = 'val-negative';
+            else if(diff >= 0 && isRunning) diffClass = 'val-positive';
+            let rowClass = isRunning ? 'row-running' : 'row-alternate';
+
+            finalResults.push({
+                "Priority": partData.details.prio, "Part Code": partData.details.original, "Description": partData.details.desc,
+                "QPA": partData.details.qpa, "Total Required": totalReq, "Relevant Stock": totalStockUsed, "Difference": diff
+            });
+
+            tbody.innerHTML += `<tr class="${rowClass}">
+                <td>${partData.details.prio}</td><td>${partData.details.original}</td><td>${partData.details.desc}</td><td>${partData.details.qpa}</td>
+                <td>${totalReq}</td><td>${totalStockUsed}</td><td class="${diffClass}">${diff}</td>
+            </tr>`;
+        });
+
+        document.getElementById('loader').style.display = 'none';
+    }
+
     function sendToCloud(payload, msgId) {
-        if(SCRIPT_URL.includes("YOUR")) return alert("URL Missing!");
+        if(SCRIPT_URL.includes("YOUR")) return alert("URL Missing");
         document.getElementById('loader').style.display = 'block';
         fetch(SCRIPT_URL, {
             method: 'POST', mode: 'no-cors',
@@ -348,73 +479,17 @@
             body: JSON.stringify(payload)
         }).then(() => {
             document.getElementById('loader').style.display = 'none';
-            document.getElementById(msgId).innerHTML = `<div class="alert alert-success">✅ Data Saved</div>`;
-            if(payload.type === 'bom') {
-                document.getElementById('planModel').value = payload.model;
-                if(!modelMap[payload.model]) { modelMap[payload.model] = [payload.color]; populateDatalist(); }
-                updateColors('plan');
-                fetchUploadedList();
-            }
-        });
-    }
-
-    function calculate() {
-        const qty = parseFloat(document.getElementById('wipQty').value);
-        if(!qty) return alert("Enter WIP Qty");
-        if(currentBOM.length === 0) return alert("BOM missing");
-
-        const tbody = document.querySelector('#resTable tbody');
-        tbody.innerHTML = '';
-        finalResults = [];
-
-        currentBOM.forEach(item => {
-            let requiredQty = 0;
-            let isRunning = false;
-
-            if(item.priority === 0 || item.priority === 1) {
-                requiredQty = item.qpa * qty;
-                isRunning = true;
-            }
-
-            // CLEAN KEY MATCHING
-            const stock = sapData[item.cleanCode] || 0;
-            const diff = stock - requiredQty;
-            
-            let diffClass = '';
-            if(diff < 0) diffClass = 'val-negative'; 
-            else if(diff >= 0 && isRunning) diffClass = 'val-positive';
-            let rowClass = isRunning ? 'row-running' : 'row-alternate';
-
-            finalResults.push({
-                "Priority": item.priority,
-                "Part Code": item.partCode,
-                "Description": item.partName,
-                "QPA": item.qpa,
-                "Required Qty": requiredQty,
-                "SAP Stock": stock,
-                "Difference": diff
-            });
-
-            tbody.innerHTML += `
-                <tr class="${rowClass}">
-                    <td class="text-center fw-bold">${item.priority}</td>
-                    <td>${item.partCode}</td>
-                    <td>${item.partName}</td>
-                    <td>${item.qpa}</td>
-                    <td>${requiredQty}</td>
-                    <td>${stock}</td>
-                    <td class="${diffClass}">${diff}</td>
-                </tr>
-            `;
+            document.getElementById(msgId).innerText = "Done!";
+            if(payload.type === 'bom') fetchUploadedList();
         });
     }
 
     function downloadExcel() {
-        if(finalResults.length === 0) return alert("Calculate first");
+        if(finalResults.length === 0) return alert("Nothing to download");
         const ws = XLSX.utils.json_to_sheet(finalResults);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Shortage_Plan");
-        XLSX.writeFile(wb, "Production_Shortage.xlsx");
+        XLSX.utils.book_append_sheet(wb, ws, "Consolidated_Shortage");
+        XLSX.writeFile(wb, "Production_Plan.xlsx");
     }
 </script>
 </body>
