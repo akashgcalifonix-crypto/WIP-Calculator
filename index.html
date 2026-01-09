@@ -4,43 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Production Planning Tool</title>
-    <!-- Bootstrap & SheetJS Libraries -->
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- SheetJS Library for Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        body { background-color: #f0f2f5; padding-top: 30px; font-family: sans-serif; }
-        .main-container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        .nav-tabs .nav-link.active { font-weight: bold; border-top: 3px solid #0d6efd; }
-        .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.85); z-index: 9999; text-align: center; padding-top: 20%; }
-        .status-msg { margin-top: 10px; font-weight: 500; }
+        body { background-color: #f4f7f6; padding-top: 20px; font-family: 'Segoe UI', sans-serif; }
+        .main-card { max-width: 1200px; margin: 0 auto; background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .nav-tabs .nav-link.active { background-color: #0d6efd; color: white; border-color: #0d6efd; }
+        .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; text-align: center; padding-top: 15%; }
+        .table-responsive { max-height: 600px; overflow-y: auto; }
+        thead th { position: sticky; top: 0; background: #212529; z-index: 1; }
     </style>
 </head>
 <body>
 
-<!-- Loading Spinner -->
+<!-- Loader -->
 <div id="loader" class="loading-overlay">
-    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
-    <h3 class="mt-3">Processing & Saving to Database...</h3>
-    <p>Please wait, creating new tab in Google Sheets.</p>
+    <div class="spinner-border text-primary" style="width: 4rem; height: 4rem;" role="status"></div>
+    <h3 class="mt-3">Processing...</h3>
+    <p class="text-muted">Saving Data to Google Sheet & Creating Tab</p>
 </div>
 
-<div class="main-container">
-    <h2 class="text-center mb-4 text-primary fw-bold">Inventory & Production Planner</h2>
+<div class="container main-card">
+    <h2 class="text-center mb-4 fw-bold text-primary">Inventory Matcher & BOM Manager</h2>
 
     <!-- TABS -->
-    <ul class="nav nav-tabs mb-4" id="toolTabs" role="tablist">
-        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#uploadTab">1. Upload BOM (New Sheet)</button></li>
+    <ul class="nav nav-tabs nav-fill mb-4" id="toolTabs" role="tablist">
+        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#uploadTab">1. Upload BOM (Create New Tab)</button></li>
         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#sapTab">2. Upload SAP Stock</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#planTab">3. Production Plan & Download</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#planTab">3. Calculate & Download</button></li>
     </ul>
 
     <div class="tab-content">
         
-        <!-- TAB 1: BOM UPLOAD -->
+        <!-- TAB 1: UPLOAD BOM -->
         <div class="tab-pane fade show active" id="uploadTab">
             <div class="row g-3">
                 <div class="col-md-4">
-                    <label class="form-label fw-bold">Model</label>
+                    <label class="form-label fw-bold">Model Name</label>
                     <select class="form-select" id="upModel" onchange="updateColors('up')"><option value="">Select Model</option></select>
                 </div>
                 <div class="col-md-4">
@@ -52,69 +54,67 @@
                     <select class="form-select" id="upProduct">
                         <option value="Earbuds">Earbuds</option>
                         <option value="Charging Case">Charging Case</option>
-                        <option value="Neckband">Neckband</option>
                         <option value="Smartwatch">Smartwatch</option>
                     </select>
                 </div>
-                <div class="col-md-12">
-                    <label class="form-label fw-bold">BOM Excel File</label>
-                    <p class="text-muted small mb-1">Required Headers: <strong>Component</strong>, <strong>Item Desc</strong>, <strong>QPA</strong></p>
-                    <input type="file" class="form-control" id="bomFile" accept=".xlsx, .csv">
+                <div class="col-12">
+                    <div class="alert alert-info py-2">
+                        <small>Excel Headers Required: <strong>Component</strong>, <strong>Item Desc</strong>, <strong>QPA</strong></small>
+                    </div>
+                    <input type="file" class="form-control form-control-lg" id="bomFile" accept=".xlsx">
                 </div>
-                <div class="col-12 text-end">
-                    <button class="btn btn-primary btn-lg" onclick="processAndUploadBOM()">Upload BOM & Create Tab</button>
+                <div class="col-12 text-center mt-4">
+                    <button class="btn btn-primary btn-lg px-5" onclick="processAndUploadBOM()">Upload BOM & Create Sheet</button>
                 </div>
             </div>
-            <div id="bomMsg" class="status-msg"></div>
+            <div id="bomMsg" class="mt-3"></div>
         </div>
 
-        <!-- TAB 2: SAP UPLOAD -->
+        <!-- TAB 2: UPLOAD SAP -->
         <div class="tab-pane fade" id="sapTab">
-            <div class="row">
-                <div class="col-md-8">
+            <div class="row justify-content-center">
+                <div class="col-md-8 text-center">
                     <label class="form-label fw-bold">SAP Inventory File</label>
-                    <input type="file" class="form-control" id="sapFile">
-                </div>
-                <div class="col-md-4 d-flex align-items-end">
-                    <button class="btn btn-warning w-100" onclick="processSAP()">Load SAP Data</button>
+                    <input type="file" class="form-control mb-3" id="sapFile">
+                    <button class="btn btn-warning text-white px-5" onclick="processSAP()">Load SAP Data</button>
                 </div>
             </div>
-            <div id="sapMsg" class="status-msg"></div>
+            <div id="sapMsg" class="mt-3"></div>
         </div>
 
         <!-- TAB 3: PLANNING -->
         <div class="tab-pane fade" id="planTab">
             <div class="card bg-light border-0 p-3 mb-3">
-                <div class="row g-3">
+                <div class="row g-3 align-items-end">
                     <div class="col-md-3">
-                        <label class="form-label fw-bold">Select Model</label>
+                        <label class="form-label fw-bold">Model</label>
                         <select class="form-select" id="planModel" onchange="updateColors('plan')"><option value="">Select</option></select>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label fw-bold">Select Color</label>
+                        <label class="form-label fw-bold">Color</label>
                         <select class="form-select" id="planColor"><option value="">Select</option></select>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-bold">WIP Quantity</label>
-                        <input type="number" class="form-control" id="wipQty" placeholder="How many to make?">
+                        <input type="number" class="form-control" id="wipQty" placeholder="Qty to make">
                     </div>
-                    <div class="col-md-3 d-flex align-items-end">
+                    <div class="col-md-3">
                         <button class="btn btn-success w-100 fw-bold" onclick="calculatePlan()">Calculate Shortage</button>
                     </div>
                 </div>
             </div>
 
             <div class="d-flex justify-content-between align-items-center mb-2">
-                <h5 id="planTitle">Result</h5>
-                <button class="btn btn-dark btn-sm" onclick="downloadExcel()">Download Excel Report</button>
+                <h5 id="resultTitle" class="m-0">Calculation Result</h5>
+                <button class="btn btn-dark btn-sm" onclick="downloadExcel()">Download Report</button>
             </div>
 
-            <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
-                <table class="table table-bordered table-striped table-hover small" id="resultTable">
-                    <thead class="table-dark sticky-top">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped table-hover" id="resultTable">
+                    <thead class="table-dark">
                         <tr>
-                            <th>Component (Part Code)</th>
-                            <th>Item Desc (Name)</th>
+                            <th>Component</th>
+                            <th>Description</th>
                             <th>QPA</th>
                             <th>Total Required</th>
                             <th>SAP Stock</th>
@@ -122,36 +122,32 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr><td colspan="6" class="text-center text-muted">Select Model & Qty to see results</td></tr>
+                        <tr><td colspan="6" class="text-center text-muted">No calculation yet.</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
-
     </div>
 </div>
 
-<!-- JS Libraries -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
     // ==========================================
-    // ⚠️ IMPORTANT: PASTE YOUR URL HERE ⚠️
+    // ⚠️ PASTE YOUR DEPLOYED GOOGLE URL HERE ⚠️
     // ==========================================
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwcJIWqOnrXI_GrXhZJu2DMbhiYXRUEXFCDYWLwJK4wmMqSaUpgcyaB_mbeoxMN5-AhSQ/exec"; 
-    // Example: "https://script.google.com/macros/s/AKfyc.../exec"
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx8hzKim1SQSBmXxMo8Cbt05cJOa3ReWwEgckkc0m3kIoB9SlekBp5770sYFTGSzCrRUQ/exec"; 
 
-    
+
     // --- Global Variables ---
-    let currentBOM = []; // Stores the currently selected BOM
-    let sapData = {};    // Stores SAP stock { 'PartCode': Qty }
+    let currentBOM = [];
+    let sapData = {};
     let finalResults = [];
 
-    // --- 1. DATA: List of Models & Colors ---
+    // --- 1. CONFIGURATION: Model List ---
     const rawModelList = [
         "Ad131|Black", "Ad131|Captain'sBlue", "Ad131|CherryBlossom", "Ad131|CrimsonCream", "Ad131|Iron'sBlood", "Ad131|White", "Ad131|King'sBlack", "Ad131|Blue", "Ad131|Green",
         "Ad138|Black", "Ad138|IvoryWhite", "Ad138|Blue", "Ad138|Green", "Ad 91|MistGrey", "Ad 91|Black", "Ad 91|Blue",
-        // ... (Aapki puri list yahan paste kar sakte hain, maine example ke liye choti rakhi hai par logic same hai) ...
         "Ad141|Black", "Ad141|Cyancider", "Ad141|White", "Ad148|Black", "Ad148|Cyancider", "Ad148|White", "Ad161|Coolsapphire", "Ad161|White", "Ad161|Black", "Ad131 Pro|Black", "Ad131 Pro|MintBubblegum", "Ad131 Pro|MintCascade", "Ad131 Pro|Blue", "Ad121 Pro|Black", "Ad121 Pro|MintCascade", "Ad121 Pro|Blue", "Ad121 Pro|Mint BubbleGum", "AD181|CoolGrey", "AD181|BoldBlue", "AD181|SpiritWhite", "AD181|CarbonBlack", "IMT121|Black", "IMT121|White", "Ad190|Black", "Ad190|White", "Ad 192|Black", "Ad 192|White", "IMT121|White", "Atom81|OpalBlack", "Atom81|AeroBlue", "Atom81|PearlWhite", "AD183|Black", "AD183|White", "AD183|Grey", "Ad100|Blue", "Ad100|Black", "Ad100|Green", "AD163|Blue", "AD163|White", "AD163|Black", "Ad138 Pro|Black", "Ad138 Pro|Blue", "Ad138 Pro|MintCascade", "IMT131|White", "AD191 G|Blue", "AD191 G|White", "AD191 G|Red", "Atom 83|Black", "Nirvana|White", "Nirvana|Black", "Nirvana ION N Mold|Black", "Nirvana ION N Mold|Blue", "Ad170|Blue", "Ad170|Black", "Ad170|White", "Atom 83|White", "Atom 83|Blue", "Alpha|JetBlack", "Alpha|DarkCyan", "Alpha|SwedishWhite", "Alpha|AssassinBlack", "Alpha|Pine Green", "Alpha|Deep Blue", "Alpha|Peach Dusk", "IMT161|Black", "IMT161|White", "IMT128|Black", "IMT128|White", "IMT101|Black", "IMT101|White", "Ad125|Black", "Ad125|White", "Ad125|Blue", "Airdopes 207|CarbonBlack", "Airdopes 207|IvoryWhite", "Airdopes 207|Bold Blue", "AD Kick|CarbonBlack", "AD Kick|White", "AD Kick|Bold Blue", "Max|Black", "Max|White", "Max|Blue", "AD Hype|OpalBlack", "AD Hype|AeroBlue", "AD Hype|PearlWhite", "Zing|Black", "Zing|Blue", "Zing|White", "Ad161|OliveGreen", "Ad141|Green", "IMT181|BlackSabre", "IMT181|White", "Joy|JetBlack", "Joy|DarkCyan", "Joy|SwedishWhite", "Ace|Black", "Ace|Blue", "Ace|Green", "Ad161|AssassinRed", "Ad161|ElectricBlue", "Ad161|GreenFury", "Ad161|ThunderBlue", "IMT 100|Black", "IMT 100|White", "Nirvana Ion (ANC)|Black", "Nirvana Ion (ANC)|White", "IMT121|Spider-Man", "IMT121|Greengiant", "Ad 118|Black", "Ad 118|Blue", "Ad 118|Green", "AD161 Pro-Buds|SleekBlack", "AD161 Pro-Buds|Blue", "AD161 Pro-Buds|GreenCyan", "Nirvana Ion (ANC)|RoseQuartz", "Nirvana Ion (ANC)|BlazingComet", "Nirvana Ion (ANC)|NorthernLights", "AD Supreme|Black", "AD Supreme|White", "AD Supreme|Blue", "AD Supreme|SageGreen", "AD Supreme|MetallicGrey", "AD Supreme|SereneGreen", "AD 71|ActiveBlack", "AD 71|StarryBlue", "AD 71|FrostWhite", "AD 71|Aqua Blue", "AD 71|Maroon Lush", "AD 71|Grey", "R 195 Pro|FieryBlack", "Ad138|CherryBlossom", "Ad 800|Black", "Ad 800|Blue", "Ultra Plus|Black", "Ultra Plus|SportyBlue", "Ultra Plus|OliveSlate", "Ultra Plus|Midnight Black", "Ad 91|MistGrey", "Ad 91|Black", "Ad 91|Blue", "Ad 800|Green", "Ad 300|GunmetalBlack", "Ad 300|ChromeWhite", "Ad 161 N|CarbonBlack", "Ad 161 N|AshGrey", "Ad 120|ActiveBlack", "Ad 120|DawnBlue", "Ad 120|IvoryWhite", "Ad 141 Anc|GunmetalBlack", "Ad 141 Anc|White", "Ad 141 Anc|Green", "Ad 141 Anc Elite|Black", "Ad 141 Anc Elite|White", "Ad 141 Anc Elite|Green", "Ad 141 Pro Buds|Obsidian Black", "Ad 141 Pro Buds|Surfer Silver", "Ad 141 Pro Buds|Galactic Purple", "Ad 141 Pro Buds|Martian Green", "Ad 311 Pro|ActiveBlack", "Ad 311 Pro|DuskBlue", "Ad 311 Pro|SpaceGrey", "Ad 311 Pro|LavenderRush", "Ad 161 Anc|Black", "Ad 161 Anc|Green", "Ad 161 Anc|White", "Ad 155|ActiveBlack", "Ad 155|IvoryWhite", "Ad 155|HotRouge", "Ad 155|ActiveTeal", "Ad 300|Purple", "Ad 800|White", "Atom 81 Pro|ObsidianNoir", "Atom 81 Pro|IvoryElegance", "Atom 81 Pro|SlateFusion", "Ad 121Pro Plus|Black", "Ad 121Pro Plus|Blue", "Ad 161 Anc Elite|Black", "Ad 161 Anc Elite|White", "Ad 161 Anc Elite|Blue", "Nirvana Ion ANC Pro|RoseQuartz", "Nirvana Ion ANC Pro|BlazingComet", "Nirvana Ion ANC Pro|NorthernLights", "Nirvana Ion ANC Pro|Crystal Black", "Nirvana Ion ANC Pro|Quartz White", "Ad Nirvana Crystal|Quantum Black", "Ad Nirvana Crystal|Blazing Red", "Ad Nirvana Crystal|Yellow Pop", "Ad Nirvana Crystal|White Lustre", "Ad 800 Hidef|Graphite Grey", "Ad 800 Hidef|Sterling Silver", "Ad 800 Hidef|Azure Blue", "Ad 800 Hidef|Emerald Green", "Ad 131 Pro Buds|Active Black", "Ad 131 Pro Buds|Slate Blue", "Ad 131 Pro Buds|Coco Brown", "Ad 301|Sunset Blush", "Ad 301|Arctic Whisper", "Ad 301|Midnight Shadow", "Ad 301|Velvet Rouge", "Ad 131 Elite Anc|Active Black", "Ad 131 Elite Anc|Active White", "Ad 131 Elite Anc|Dawn Blue", "Ad 131 Elite Anc|ActiveTeal", "Ad Primo|Black", "Ad 181 Pro|Lilac Serenity", "Ad 181 Pro|Frosted Mint", "Ad 181 Pro|Coral Bloom", "Ad 181 Pro|Mocha Elegance", "Ad 191 Anc|Pellucid White", "Ad 191 Anc|Pellucid Orange", "Ad 191 Anc|Pellucid Green", "Ad 191 Anc|Pellucid Red", "Ad 191 Anc|Pellucid Blue", "Ad 280 Anc|Active Black", "Ad 280 Anc|Mint Blue", "Ad Unity ANC|Grey", "Ad Unity ANC|Black", "Ad Nirvana Iris|Black", "Ad Nirvana Iris|White", "Ad Nirvana X|Galactic Red", "Ad Nirvana X|Smoky Amethyst", "Ad Nirvana X|Mist Blue", "Ad Nirvana X|Cosmic Onyx", "Ad 91 Prime|Midnight Black", "Ad 91 Prime|Sonic Silver", "Ad 111v2|White", "Ad 111v2|Black", "Ad 280 Anc|Green", "Ad Ultra Pro|Zinc White", "Ad Ultra Pro|Gunmetal Black", "Ad Plus 311|Ash Grey", "Ad Plus 311|Charcoal Black", "Ad Plus 311|Crimsom Red", "Ad Plus 311|Midnight Blue", "Ad Plus 318|Active Black", "Ad Plus 318|StarryBlue", "Ad 213|Berry Blue", "Ad 213|Sandstone", "Ad 213|Shadow Black", "Ad 141 Gen 2|Active White", "Ad 141 Gen 2|Grey", "Ad 141 Gen 2|Active Black", "Ad 141 Gen 2|Orange", "Ad 141 Gen 2|Teal", "Ad 148 Gen 2|Active White", "Ad 148 Gen 2|Grey", "Ad 148 Gen 2|Orange", "Ad 148 Gen 2|Teal", "Ad 148 Gen 2|Active Black", "Ad 212|Ivory", "Ad 212|Noir Black", "Ad 212|Peach Blush", "Ad Prime 412|Lunar White", "Ad Prime 412|Midnight Black", "Ad Prime 412|Sahara Chic", "Ad 131 Gen 2|CarbonBlack", "Ad 131 Gen 2|Cream White", "Ad 131 Gen 2|Ice Blue", "Ad 313|CarbonBlack", "Ad 313|Gold Mist", "Ad 313|Jade Green", "HMD P60|Black", "HMD P60|White", "HMD P60|Green", "Ad Alpha Gen 2|Midnight Black", "Ad Alpha Gen 2|Slate Grey", "Ad Alpha Gen 2|Ocean Blue", "Ad Ace Gen 2|Shadow Black", "Ad Ace Gen 2|Moon White", "Ad Ace Gen 2|Mystic Blue", "HMD S60|Grey", "HMD S60|Purple", "HMD P50|Black", "HMD P50|White", "HMD P50|Blue", "HMD X50|Black", "HMD X50|White", "HMD X50 Pro|Silver", "HMD X50 Pro|Blue", "HMD P70|Black", "HMD P70|White", "Amazon basics|Black", "Ad Prime 513 Anc|Carbon Black", "Ad Prime 513 Anc|Ivory Glow", "Ad Pulse|Shadow Black", "Ad 138 Gen 2|CarbonBlack", "Ad 138 Gen 2|Cream White", "Ad 701 Anc|Blue", "Ad 701 Anc|Grey", "Dashcam Hive E1|Black", "Dashcam Hive F1|Blue"
     ];
 
@@ -159,9 +155,13 @@
     rawModelList.forEach(item => {
         const [model, color] = item.split('|');
         if (!modelMap[model]) modelMap[model] = [];
-        if (color) modelMap[model].push(color);
+        // [FIXED] Prevent duplicate colors
+        if (color && !modelMap[model].includes(color)) {
+            modelMap[model].push(color);
+        }
     });
 
+    // Load Dropdowns
     window.onload = function() {
         populateDropdown('upModel');
         populateDropdown('planModel');
@@ -171,9 +171,7 @@
         const select = document.getElementById(id);
         Object.keys(modelMap).sort().forEach(m => {
             const opt = document.createElement('option');
-            opt.value = m;
-            opt.text = m;
-            select.appendChild(opt);
+            opt.value = m; opt.text = m; select.appendChild(opt);
         });
     }
 
@@ -184,21 +182,19 @@
         if (model && modelMap[model]) {
             modelMap[model].forEach(c => {
                 const opt = document.createElement('option');
-                opt.value = c;
-                opt.text = c;
-                colorSelect.appendChild(opt);
+                opt.value = c; opt.text = c; colorSelect.appendChild(opt);
             });
         }
     }
 
-    // --- 2. UPLOAD BOM (Creates New Tab) ---
+    // --- 2. UPLOAD BOM (Logic for Header Matching) ---
     function processAndUploadBOM() {
         const model = document.getElementById('upModel').value;
         const color = document.getElementById('upColor').value;
         const fileInput = document.getElementById('bomFile');
 
         if(!model || !color || !fileInput.files[0]) {
-            alert("Please select Model, Color and File");
+            alert("Select Model, Color and File first!");
             return;
         }
 
@@ -209,16 +205,21 @@
             const firstSheet = workbook.SheetNames[0];
             const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet]);
 
-            // --- HEADER MAPPING (Based on Screenshot) ---
             const rows = [];
-            let headerMissing = false;
-
+            
+            // Loop through each row
             jsonData.forEach(row => {
-                // Mapping keys from your Screenshot
-                let pCode = row['Component'] || row['Material'] || row['Part Code'];
-                let pName = row['Item Desc'] || row['Description'] || row['Name'];
-                let qpa = row['QPA'] || row['Quantity'] || row['Qty'];
-                let mpn = row['MPN'] || ""; // Optional
+                // [FIXED] Remove spaces from Headers (e.g., "Component " -> "Component")
+                let cleanRow = {};
+                Object.keys(row).forEach(key => {
+                    cleanRow[key.trim()] = row[key];
+                });
+
+                // Match with your Screenshot Columns
+                let pCode = cleanRow['Component'] || cleanRow['Material'] || cleanRow['Part Code'];
+                let pName = cleanRow['Item Desc'] || cleanRow['Description'] || cleanRow['Part Name'];
+                let qpa = cleanRow['QPA'] || cleanRow['Quantity'] || cleanRow['Qty'];
+                let mpn = cleanRow['MPN'] || ""; 
 
                 if (pCode && qpa !== undefined) {
                     rows.push({ partCode: pCode, partName: pName, qpa: parseFloat(qpa), mpn: mpn });
@@ -226,25 +227,17 @@
             });
 
             if (rows.length === 0) {
-                alert("Error: File mein headers match nahi hue. Please ensure columns 'Component', 'Item Desc', and 'QPA' exist.");
+                alert("Error: Headers match nahi hue. Excel check karein ('Component', 'QPA').");
                 return;
             }
 
-            // Save to Current Memory (so we can plan immediately)
-            currentBOM = rows; 
-
-            // Send to Google Sheet
-            sendToCloud({
-                type: 'bom',
-                model: model,
-                color: color,
-                rows: rows
-            }, 'bomMsg');
+            currentBOM = rows; // Save to local memory
+            sendToCloud({ type: 'bom', model: model, color: color, rows: rows }, 'bomMsg');
         };
         reader.readAsArrayBuffer(fileInput.files[0]);
     }
 
-    // --- 3. UPLOAD SAP (Single Sheet) ---
+    // --- 3. UPLOAD SAP ---
     function processSAP() {
         const fileInput = document.getElementById('sapFile');
         if(!fileInput.files[0]) return alert("Select SAP File");
@@ -260,9 +253,11 @@
             const rowsToSend = [];
 
             jsonData.forEach(row => {
-                // Adjust SAP headers as needed
-                let code = row['Part Code'] || row['Material'] || row['PartCode'];
-                let qty = row['Stock'] || row['Unrestricted'] || row['Quantity'];
+                let cleanRow = {};
+                Object.keys(row).forEach(key => { cleanRow[key.trim()] = row[key]; });
+
+                let code = cleanRow['Part Code'] || cleanRow['Material'] || cleanRow['PartCode'];
+                let qty = cleanRow['Stock'] || cleanRow['Unrestricted'] || cleanRow['Quantity'];
                 
                 if(code) {
                     let val = parseFloat(qty) || 0;
@@ -276,10 +271,10 @@
         reader.readAsArrayBuffer(fileInput.files[0]);
     }
 
-    // --- 4. CLOUD COMMUNICATION ---
+    // --- 4. CLOUD SYNC ---
     function sendToCloud(payload, msgId) {
         if(SCRIPT_URL.includes("YOUR_GOOGLE_SCRIPT")) {
-            alert("Error: Script URL set nahi kiya hai! Code check karein.");
+            alert("Warning: URL Set nahi hai!");
             return;
         }
 
@@ -289,15 +284,15 @@
 
         fetch(SCRIPT_URL, {
             method: 'POST',
-            mode: 'no-cors', // Essential
+            mode: 'no-cors',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         })
         .then(() => {
             document.getElementById('loader').style.display = 'none';
-            msgEl.innerHTML = `<div class="alert alert-success">✅ Success! Data sent to Google Sheets.</div>`;
+            msgEl.innerHTML = `<div class="alert alert-success">✅ Done! Data saved to Google Sheets.</div>`;
             
-            // Auto switch to Plan tab if BOM
+            // Auto-switch for BOM
             if(payload.type === 'bom') {
                 document.getElementById('planModel').value = payload.model;
                 updateColors('plan');
@@ -310,13 +305,10 @@
         });
     }
 
-    // --- 5. CALCULATION LOGIC ---
+    // --- 5. CALCULATION ---
     function calculatePlan() {
         const qty = parseFloat(document.getElementById('wipQty').value);
-        if(!qty || currentBOM.length === 0) {
-            alert("Ensure BOM is uploaded and WIP Qty is entered.");
-            return;
-        }
+        if(!qty || currentBOM.length === 0) return alert("Enter WIP Qty & Ensure BOM is loaded.");
 
         const tbody = document.querySelector('#resultTable tbody');
         tbody.innerHTML = '';
@@ -328,7 +320,7 @@
             const diff = stock - req;
 
             finalResults.push({
-                "Part Code": item.partCode,
+                "Component": item.partCode,
                 "Description": item.partName,
                 "QPA": item.qpa,
                 "Total Required": req,
@@ -336,31 +328,28 @@
                 "Difference": diff
             });
 
-            const tr = `
+            tbody.innerHTML += `
                 <tr>
                     <td>${item.partCode}</td>
-                    <td>${item.partName || '-'}</td>
+                    <td>${item.partName || ''}</td>
                     <td>${item.qpa}</td>
-                    <td><strong>${req}</strong></td>
+                    <td>${req}</td>
                     <td>${stock}</td>
                     <td class="${diff < 0 ? 'text-danger fw-bold' : 'text-success'}">${diff}</td>
                 </tr>
             `;
-            tbody.innerHTML += tr;
         });
-        
-        document.getElementById('planTitle').innerText = `Result for ${qty} Units`;
+        document.getElementById('resultTitle').innerText = `Shortage Report for ${qty} Units`;
     }
 
     function downloadExcel() {
-        if(finalResults.length === 0) return alert("No data to download");
+        if(finalResults.length === 0) return alert("Calculate first!");
         const ws = XLSX.utils.json_to_sheet(finalResults);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Shortage_Report");
+        XLSX.utils.book_append_sheet(wb, ws, "ShortageReport");
         XLSX.writeFile(wb, "Production_Plan.xlsx");
     }
 </script>
 
 </body>
 </html>
-
