@@ -3,243 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventory & BOM Manager</title>
+    <title>Production Planning Tool</title>
+    <!-- Bootstrap & SheetJS Libraries -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        body { background-color: #f4f6f9; padding: 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .card { box-shadow: 0 4px 8px rgba(0,0,0,0.1); border: none; margin-bottom: 20px; }
-        .header-title { color: #2c3e50; font-weight: 700; margin-bottom: 20px; }
-        .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 1000; text-align: center; padding-top: 20%; }
+        body { background-color: #f0f2f5; padding-top: 30px; font-family: sans-serif; }
+        .main-container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .nav-tabs .nav-link.active { font-weight: bold; border-top: 3px solid #0d6efd; }
+        .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.85); z-index: 9999; text-align: center; padding-top: 20%; }
+        .status-msg { margin-top: 10px; font-weight: 500; }
     </style>
 </head>
 <body>
 
 <!-- Loading Spinner -->
 <div id="loader" class="loading-overlay">
-    <div class="spinner-border text-primary" role="status"></div>
-    <h3>Processing Data & Saving to Cloud...</h3>
+    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
+    <h3 class="mt-3">Processing & Saving to Database...</h3>
+    <p>Please wait, creating new tab in Google Sheets.</p>
 </div>
 
-<div class="container">
-    <h2 class="text-center header-title">Production Inventory Matcher & BOM Uploader</h2>
+<div class="main-container">
+    <h2 class="text-center mb-4 text-primary fw-bold">Inventory & Production Planner</h2>
 
-    <!-- Navigation -->
-    <ul class="nav nav-tabs mb-3" id="myTab" role="tablist">
-        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#upload">1. Upload BOM & Save</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#sap">2. Upload SAP Stock</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#plan">3. Planning & Result</button></li>
+    <!-- TABS -->
+    <ul class="nav nav-tabs mb-4" id="toolTabs" role="tablist">
+        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#uploadTab">1. Upload BOM (New Sheet)</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#sapTab">2. Upload SAP Stock</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#planTab">3. Production Plan & Download</button></li>
     </ul>
 
     <div class="tab-content">
         
-        <!-- TAB 1: UPLOAD BOM -->
-        <div class="tab-pane fade show active" id="upload">
-            <div class="card p-4">
-                <h4>Upload New BOM</h4>
-                <p class="text-muted">Select details carefully. This will save to Google Sheet Database.</p>
-                <div class="row g-3">
-                    <div class="col-md-3">
-                        <label class="form-label">Model Name</label>
-                        <select class="form-select" id="upModel" onchange="updateColors('up')"><option value="">Select Model</option></select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Color</label>
-                        <select class="form-select" id="upColor"><option value="">Select Color</option></select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Product Type</label>
-                        <select class="form-select" id="upProduct">
-                            <option value="Earbuds">Earbuds</option>
-                            <option value="Charging Case">Charging Case</option>
-                            <option value="Neckband">Neckband</option>
-                            <option value="Smartwatch">Smartwatch</option>
-                            <option value="Speaker">Speaker</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">BOM File (Excel)</label>
-                        <input type="file" class="form-control" id="bomFile">
-                    </div>
-                    <div class="col-12 text-end">
-                        <button class="btn btn-primary px-4" onclick="processAndUploadBOM()">Save BOM to Cloud & Load</button>
-                    </div>
+        <!-- TAB 1: BOM UPLOAD -->
+        <div class="tab-pane fade show active" id="uploadTab">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Model</label>
+                    <select class="form-select" id="upModel" onchange="updateColors('up')"><option value="">Select Model</option></select>
                 </div>
-                <div id="bomMsg" class="mt-3"></div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Color</label>
+                    <select class="form-select" id="upColor"><option value="">Select Color</option></select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Product Type</label>
+                    <select class="form-select" id="upProduct">
+                        <option value="Earbuds">Earbuds</option>
+                        <option value="Charging Case">Charging Case</option>
+                        <option value="Neckband">Neckband</option>
+                        <option value="Smartwatch">Smartwatch</option>
+                    </select>
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label fw-bold">BOM Excel File</label>
+                    <p class="text-muted small mb-1">Required Headers: <strong>Component</strong>, <strong>Item Desc</strong>, <strong>QPA</strong></p>
+                    <input type="file" class="form-control" id="bomFile" accept=".xlsx, .csv">
+                </div>
+                <div class="col-12 text-end">
+                    <button class="btn btn-primary btn-lg" onclick="processAndUploadBOM()">Upload BOM & Create Tab</button>
+                </div>
             </div>
+            <div id="bomMsg" class="status-msg"></div>
         </div>
 
         <!-- TAB 2: SAP UPLOAD -->
-        <div class="tab-pane fade" id="sap">
-            <div class="card p-4">
-                <h4>Upload Current SAP Inventory</h4>
-                <div class="row">
-                    <div class="col-md-6">
-                        <input type="file" class="form-control" id="sapFile">
-                    </div>
-                    <div class="col-md-6">
-                        <button class="btn btn-warning text-white" onclick="processSAP()">Load SAP Data</button>
-                    </div>
+        <div class="tab-pane fade" id="sapTab">
+            <div class="row">
+                <div class="col-md-8">
+                    <label class="form-label fw-bold">SAP Inventory File</label>
+                    <input type="file" class="form-control" id="sapFile">
                 </div>
-                <div id="sapMsg" class="mt-3"></div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button class="btn btn-warning w-100" onclick="processSAP()">Load SAP Data</button>
+                </div>
             </div>
+            <div id="sapMsg" class="status-msg"></div>
         </div>
 
         <!-- TAB 3: PLANNING -->
-        <div class="tab-pane fade" id="plan">
-            <div class="card p-4">
+        <div class="tab-pane fade" id="planTab">
+            <div class="card bg-light border-0 p-3 mb-3">
                 <div class="row g-3">
                     <div class="col-md-3">
-                        <label class="form-label">Planning Model</label>
+                        <label class="form-label fw-bold">Select Model</label>
                         <select class="form-select" id="planModel" onchange="updateColors('plan')"><option value="">Select</option></select>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Color</label>
+                        <label class="form-label fw-bold">Select Color</label>
                         <select class="form-select" id="planColor"><option value="">Select</option></select>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">WIP Quantity</label>
-                        <input type="number" class="form-control" id="wipQty" placeholder="e.g. 500">
+                        <label class="form-label fw-bold">WIP Quantity</label>
+                        <input type="number" class="form-control" id="wipQty" placeholder="How many to make?">
                     </div>
                     <div class="col-md-3 d-flex align-items-end">
-                        <button class="btn btn-success w-100" onclick="calculate()">Calculate Shortage</button>
+                        <button class="btn btn-success w-100 fw-bold" onclick="calculatePlan()">Calculate Shortage</button>
                     </div>
                 </div>
             </div>
 
-            <div class="d-flex justify-content-end mb-2">
-                <button class="btn btn-dark btn-sm" onclick="downloadExcel()">Download Report</button>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 id="planTitle">Result</h5>
+                <button class="btn btn-dark btn-sm" onclick="downloadExcel()">Download Excel Report</button>
             </div>
-            
-            <div class="table-responsive bg-white">
-                <table class="table table-bordered table-striped" id="resultTable">
-                    <thead class="table-dark">
+
+            <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                <table class="table table-bordered table-striped table-hover small" id="resultTable">
+                    <thead class="table-dark sticky-top">
                         <tr>
-                            <th>Part Code</th>
-                            <th>Part Name</th>
+                            <th>Component (Part Code)</th>
+                            <th>Item Desc (Name)</th>
                             <th>QPA</th>
-                            <th>Required (WIP)</th>
+                            <th>Total Required</th>
                             <th>SAP Stock</th>
                             <th>Difference</th>
                         </tr>
                     </thead>
-                    <tbody></tbody>
+                    <tbody>
+                        <tr><td colspan="6" class="text-center text-muted">Select Model & Qty to see results</td></tr>
+                    </tbody>
                 </table>
             </div>
         </div>
+
     </div>
 </div>
 
+<!-- JS Libraries -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    // --- CONFIGURATION ---
-    // YAHAN APNA GOOGLE APPS SCRIPT URL PASTE KAREIN
+    // ==========================================
+    // ⚠️ IMPORTANT: PASTE YOUR URL HERE ⚠️
+    // ==========================================
     const SCRIPT_URL = "YOUR_GOOGLE_SCRIPT_URL_HERE"; 
+    // Example: "https://script.google.com/macros/s/AKfyc.../exec"
 
-    // --- DATA HANDLING ---
-    let loadedBOM = []; // Current BOM in memory
-    let sapData = {};   // SAP Data object
-    let calculatedResults = [];
+    
+    // --- Global Variables ---
+    let currentBOM = []; // Stores the currently selected BOM
+    let sapData = {};    // Stores SAP stock { 'PartCode': Qty }
+    let finalResults = [];
 
-    // --- RAW DATA FROM USER (List parsed for JS) ---
+    // --- 1. DATA: List of Models & Colors ---
     const rawModelList = [
         "Ad131|Black", "Ad131|Captain'sBlue", "Ad131|CherryBlossom", "Ad131|CrimsonCream", "Ad131|Iron'sBlood", "Ad131|White", "Ad131|King'sBlack", "Ad131|Blue", "Ad131|Green",
-        "Ad138|Black", "Ad138|IvoryWhite", "Ad138|Blue", "Ad138|Green",
-        "Ad141|Black", "Ad141|Cyancider", "Ad141|White",
-        "Ad148|Black", "Ad148|Cyancider", "Ad148|White",
-        "Ad161|Coolsapphire", "Ad161|White", "Ad161|Black",
-        "Ad131 Pro|Black", "Ad131 Pro|MintBubblegum", "Ad131 Pro|MintCascade", "Ad131 Pro|Blue",
-        "Ad121 Pro|Black", "Ad121 Pro|MintCascade", "Ad121 Pro|Blue", "Ad121 Pro|Mint BubbleGum",
-        "AD181|CoolGrey", "AD181|BoldBlue", "AD181|SpiritWhite", "AD181|CarbonBlack",
-        "IMT121|Black", "IMT121|White", "Ad190|Black", "Ad190|White", "Ad 192|Black", "Ad 192|White",
-        "Atom81|OpalBlack", "Atom81|AeroBlue", "Atom81|PearlWhite",
-        "AD183|Black", "AD183|White", "AD183|Grey",
-        "Ad100|Blue", "Ad100|Black", "Ad100|Green",
-        "AD163|Blue", "AD163|White", "AD163|Black",
-        "Ad138 Pro|Black", "Ad138 Pro|Blue", "Ad138 Pro|MintCascade",
-        "IMT131|White", "AD191 G|Blue", "AD191 G|White", "AD191 G|Red",
-        "Nirvana|White", "Nirvana|Black", "Nirvana ION N Mold|Black", "Nirvana ION N Mold|Blue",
-        "Ad170|Black", "Ad170|White",
-        "Atom 83|White", "Atom 83|Blue", "Atom 83|Black",
-        "Alpha|JetBlack", "Alpha|DarkCyan", "Alpha|SwedishWhite", "Alpha|AssassinBlack", "Alpha|Pine Green", "Alpha|Deep Blue", "Alpha|Peach Dusk",
-        "IMT161|Black", "IMT161|White", "IMT128|Black", "IMT128|White", "IMT101|Black", "IMT101|White",
-        "Ad125|Black", "Ad125|White", "Ad125|Blue",
-        "Airdopes 207|CarbonBlack", "Airdopes 207|IvoryWhite", "Airdopes 207|Bold Blue",
-        "AD Kick|CarbonBlack", "AD Kick|White", "AD Kick|Bold Blue",
-        "Max|Black", "Max|White", "Max|Blue",
-        "AD Hype|OpalBlack", "AD Hype|AeroBlue", "AD Hype|PearlWhite",
-        "Zing|Black", "Zing|Blue", "Zing|White",
-        "Ad161|OliveGreen", "Ad141|Green",
-        "IMT181|BlackSabre", "IMT181|White",
-        "Joy|JetBlack", "Joy|DarkCyan", "Joy|SwedishWhite",
-        "Ace|Black", "Ace|Blue", "Ace|Green",
-        "Ad161|AssassinRed", "Ad161|ElectricBlue", "Ad161|GreenFury", "Ad161|ThunderBlue",
-        "IMT 100|Black", "IMT 100|White",
-        "Nirvana Ion (ANC)|Black", "Nirvana Ion (ANC)|White", "Nirvana Ion (ANC)|RoseQuartz", "Nirvana Ion (ANC)|BlazingComet", "Nirvana Ion (ANC)|NorthernLights",
-        "IMT121|Spider-Man", "IMT121|Greengiant",
-        "Ad 118|Black", "Ad 118|Blue", "Ad 118|Green",
-        "AD161 Pro-Buds|SleekBlack", "AD161 Pro-Buds|Blue", "AD161 Pro-Buds|GreenCyan",
-        "AD Supreme|Black", "AD Supreme|White", "AD Supreme|Blue", "AD Supreme|SageGreen", "AD Supreme|MetallicGrey", "AD Supreme|SereneGreen",
-        "AD 71|ActiveBlack", "AD 71|StarryBlue", "AD 71|FrostWhite", "AD 71|Aqua Blue", "AD 71|Maroon Lush", "AD 71|Grey",
-        "R 195 Pro|FieryBlack", "Ad138|CherryBlossom",
-        "Ad 800|Black", "Ad 800|Blue", "Ad 800|Green", "Ad 800|White",
-        "Ultra Plus|Black", "Ultra Plus|SportyBlue", "Ultra Plus|OliveSlate", "Ultra Plus|Midnight Black",
-        "Ad 91|MistGrey", "Ad 91|Black", "Ad 91|Blue",
-        "Ad 300|GunmetalBlack", "Ad 300|ChromeWhite", "Ad 300|Purple",
-        "Ad 161 N|CarbonBlack", "Ad 161 N|AshGrey",
-        "Ad 120|ActiveBlack", "Ad 120|DawnBlue", "Ad 120|IvoryWhite",
-        "Ad 141 Anc|GunmetalBlack", "Ad 141 Anc|White", "Ad 141 Anc|Green", "Ad 141 Anc|Black",
-        "Ad 141 Anc Elite|Black", "Ad 141 Anc Elite|White", "Ad 141 Anc Elite|Green",
-        "Ad 141 Pro Buds|Obsidian Black", "Ad 141 Pro Buds|Surfer Silver", "Ad 141 Pro Buds|Galactic Purple", "Ad 141 Pro Buds|Martian Green",
-        "Ad 311 Pro|ActiveBlack", "Ad 311 Pro|DuskBlue", "Ad 311 Pro|SpaceGrey", "Ad 311 Pro|LavenderRush",
-        "Ad 161 Anc|Black", "Ad 161 Anc|Green", "Ad 161 Anc|White",
-        "Ad 155|ActiveBlack", "Ad 155|IvoryWhite", "Ad 155|HotRouge", "Ad 155|ActiveTeal",
-        "Atom 81 Pro|ObsidianNoir", "Atom 81 Pro|IvoryElegance", "Atom 81 Pro|SlateFusion",
-        "Ad 121Pro Plus|Black", "Ad 121Pro Plus|Blue",
-        "Ad 161 Anc Elite|Black", "Ad 161 Anc Elite|White", "Ad 161 Anc Elite|Blue",
-        "Nirvana Ion ANC Pro|RoseQuartz", "Nirvana Ion ANC Pro|BlazingComet", "Nirvana Ion ANC Pro|NorthernLights", "Nirvana Ion ANC Pro|Crystal Black", "Nirvana Ion ANC Pro|Quartz White",
-        "Ad Nirvana Crystal|Quantum Black", "Ad Nirvana Crystal|Blazing Red", "Ad Nirvana Crystal|Yellow Pop", "Ad Nirvana Crystal|White Lustre",
-        "Ad 800 Hidef|Graphite Grey", "Ad 800 Hidef|Sterling Silver", "Ad 800 Hidef|Azure Blue", "Ad 800 Hidef|Emerald Green",
-        "Ad 131 Pro Buds|Active Black", "Ad 131 Pro Buds|Slate Blue", "Ad 131 Pro Buds|Coco Brown",
-        "Ad 301|Sunset Blush", "Ad 301|Arctic Whisper", "Ad 301|Midnight Shadow", "Ad 301|Velvet Rouge",
-        "Ad 131 Elite Anc|Active Black", "Ad 131 Elite Anc|Active White", "Ad 131 Elite Anc|Dawn Blue", "Ad 131 Elite Anc|ActiveTeal",
-        "Ad Primo|Black",
-        "Ad 181 Pro|Lilac Serenity", "Ad 181 Pro|Frosted Mint", "Ad 181 Pro|Coral Bloom", "Ad 181 Pro|Mocha Elegance",
-        "Ad 191 Anc|Pellucid White", "Ad 191 Anc|Pellucid Orange", "Ad 191 Anc|Pellucid Green", "Ad 191 Anc|Pellucid Red", "Ad 191 Anc|Pellucid Blue",
-        "Ad 280 Anc|Active Black", "Ad 280 Anc|Mint Blue", "Ad 280 Anc|Green",
-        "Ad Unity ANC|Grey", "Ad Unity ANC|Black",
-        "Ad Nirvana Iris|Black", "Ad Nirvana Iris|White",
-        "Ad Nirvana X|Galactic Red", "Ad Nirvana X|Smoky Amethyst", "Ad Nirvana X|Mist Blue", "Ad Nirvana X|Cosmic Onyx",
-        "Ad 91 Prime|Midnight Black", "Ad 91 Prime|Sonic Silver",
-        "Ad 111v2|White", "Ad 111v2|Black",
-        "Ad Ultra Pro|Zinc White", "Ad Ultra Pro|Gunmetal Black",
-        "Ad Plus 311|Ash Grey", "Ad Plus 311|Charcoal Black", "Ad Plus 311|Crimsom Red", "Ad Plus 311|Midnight Blue",
-        "Ad Plus 318|Active Black", "Ad Plus 318|StarryBlue",
-        "Ad 213|Berry Blue", "Ad 213|Sandstone", "Ad 213|Shadow Black",
-        "Ad 141 Gen 2|Active White", "Ad 141 Gen 2|Grey", "Ad 141 Gen 2|Active Black", "Ad 141 Gen 2|Orange", "Ad 141 Gen 2|Teal",
-        "Ad 148 Gen 2|Active White", "Ad 148 Gen 2|Grey", "Ad 148 Gen 2|Orange", "Ad 148 Gen 2|Teal", "Ad 148 Gen 2|Active Black",
-        "Ad 212|Ivory", "Ad 212|Noir Black", "Ad 212|Peach Blush",
-        "Ad Prime 412|Lunar White", "Ad Prime 412|Midnight Black", "Ad Prime 412|Sahara Chic",
-        "Ad 131 Gen 2|CarbonBlack", "Ad 131 Gen 2|Cream White", "Ad 131 Gen 2|Ice Blue",
-        "Ad 313|CarbonBlack", "Ad 313|Gold Mist", "Ad 313|Jade Green",
-        "HMD P60|Black", "HMD P60|White", "HMD P60|Green",
-        "Ad Alpha Gen 2|Midnight Black", "Ad Alpha Gen 2|Slate Grey", "Ad Alpha Gen 2|Ocean Blue",
-        "Ad Ace Gen 2|Shadow Black", "Ad Ace Gen 2|Moon White", "Ad Ace Gen 2|Mystic Blue",
-        "HMD S60|Grey", "HMD S60|Purple",
-        "HMD P50|Black", "HMD P50|White", "HMD P50|Blue",
-        "HMD X50|Black", "HMD X50|White",
-        "HMD X50 Pro|Silver", "HMD X50 Pro|Blue",
-        "HMD P70|Black", "HMD P70|White",
-        "Amazon basics|Black",
-        "Ad Prime 513 Anc|Carbon Black", "Ad Prime 513 Anc|Ivory Glow",
-        "Ad Pulse|Shadow Black",
-        "Ad 138 Gen 2|CarbonBlack", "Ad 138 Gen 2|Cream White",
-        "Ad 701 Anc|Blue", "Ad 701 Anc|Grey",
-        "Dashcam Hive E1|Black", "Dashcam Hive F1|Blue"
+        "Ad138|Black", "Ad138|IvoryWhite", "Ad138|Blue", "Ad138|Green", "Ad 91|MistGrey", "Ad 91|Black", "Ad 91|Blue",
+        // ... (Aapki puri list yahan paste kar sakte hain, maine example ke liye choti rakhi hai par logic same hai) ...
+        "Ad141|Black", "Ad141|Cyancider", "Ad141|White", "Ad148|Black", "Ad148|Cyancider", "Ad148|White", "Ad161|Coolsapphire", "Ad161|White", "Ad161|Black", "Ad131 Pro|Black", "Ad131 Pro|MintBubblegum", "Ad131 Pro|MintCascade", "Ad131 Pro|Blue", "Ad121 Pro|Black", "Ad121 Pro|MintCascade", "Ad121 Pro|Blue", "Ad121 Pro|Mint BubbleGum", "AD181|CoolGrey", "AD181|BoldBlue", "AD181|SpiritWhite", "AD181|CarbonBlack", "IMT121|Black", "IMT121|White", "Ad190|Black", "Ad190|White", "Ad 192|Black", "Ad 192|White", "IMT121|White", "Atom81|OpalBlack", "Atom81|AeroBlue", "Atom81|PearlWhite", "AD183|Black", "AD183|White", "AD183|Grey", "Ad100|Blue", "Ad100|Black", "Ad100|Green", "AD163|Blue", "AD163|White", "AD163|Black", "Ad138 Pro|Black", "Ad138 Pro|Blue", "Ad138 Pro|MintCascade", "IMT131|White", "AD191 G|Blue", "AD191 G|White", "AD191 G|Red", "Atom 83|Black", "Nirvana|White", "Nirvana|Black", "Nirvana ION N Mold|Black", "Nirvana ION N Mold|Blue", "Ad170|Blue", "Ad170|Black", "Ad170|White", "Atom 83|White", "Atom 83|Blue", "Alpha|JetBlack", "Alpha|DarkCyan", "Alpha|SwedishWhite", "Alpha|AssassinBlack", "Alpha|Pine Green", "Alpha|Deep Blue", "Alpha|Peach Dusk", "IMT161|Black", "IMT161|White", "IMT128|Black", "IMT128|White", "IMT101|Black", "IMT101|White", "Ad125|Black", "Ad125|White", "Ad125|Blue", "Airdopes 207|CarbonBlack", "Airdopes 207|IvoryWhite", "Airdopes 207|Bold Blue", "AD Kick|CarbonBlack", "AD Kick|White", "AD Kick|Bold Blue", "Max|Black", "Max|White", "Max|Blue", "AD Hype|OpalBlack", "AD Hype|AeroBlue", "AD Hype|PearlWhite", "Zing|Black", "Zing|Blue", "Zing|White", "Ad161|OliveGreen", "Ad141|Green", "IMT181|BlackSabre", "IMT181|White", "Joy|JetBlack", "Joy|DarkCyan", "Joy|SwedishWhite", "Ace|Black", "Ace|Blue", "Ace|Green", "Ad161|AssassinRed", "Ad161|ElectricBlue", "Ad161|GreenFury", "Ad161|ThunderBlue", "IMT 100|Black", "IMT 100|White", "Nirvana Ion (ANC)|Black", "Nirvana Ion (ANC)|White", "IMT121|Spider-Man", "IMT121|Greengiant", "Ad 118|Black", "Ad 118|Blue", "Ad 118|Green", "AD161 Pro-Buds|SleekBlack", "AD161 Pro-Buds|Blue", "AD161 Pro-Buds|GreenCyan", "Nirvana Ion (ANC)|RoseQuartz", "Nirvana Ion (ANC)|BlazingComet", "Nirvana Ion (ANC)|NorthernLights", "AD Supreme|Black", "AD Supreme|White", "AD Supreme|Blue", "AD Supreme|SageGreen", "AD Supreme|MetallicGrey", "AD Supreme|SereneGreen", "AD 71|ActiveBlack", "AD 71|StarryBlue", "AD 71|FrostWhite", "AD 71|Aqua Blue", "AD 71|Maroon Lush", "AD 71|Grey", "R 195 Pro|FieryBlack", "Ad138|CherryBlossom", "Ad 800|Black", "Ad 800|Blue", "Ultra Plus|Black", "Ultra Plus|SportyBlue", "Ultra Plus|OliveSlate", "Ultra Plus|Midnight Black", "Ad 91|MistGrey", "Ad 91|Black", "Ad 91|Blue", "Ad 800|Green", "Ad 300|GunmetalBlack", "Ad 300|ChromeWhite", "Ad 161 N|CarbonBlack", "Ad 161 N|AshGrey", "Ad 120|ActiveBlack", "Ad 120|DawnBlue", "Ad 120|IvoryWhite", "Ad 141 Anc|GunmetalBlack", "Ad 141 Anc|White", "Ad 141 Anc|Green", "Ad 141 Anc Elite|Black", "Ad 141 Anc Elite|White", "Ad 141 Anc Elite|Green", "Ad 141 Pro Buds|Obsidian Black", "Ad 141 Pro Buds|Surfer Silver", "Ad 141 Pro Buds|Galactic Purple", "Ad 141 Pro Buds|Martian Green", "Ad 311 Pro|ActiveBlack", "Ad 311 Pro|DuskBlue", "Ad 311 Pro|SpaceGrey", "Ad 311 Pro|LavenderRush", "Ad 161 Anc|Black", "Ad 161 Anc|Green", "Ad 161 Anc|White", "Ad 155|ActiveBlack", "Ad 155|IvoryWhite", "Ad 155|HotRouge", "Ad 155|ActiveTeal", "Ad 300|Purple", "Ad 800|White", "Atom 81 Pro|ObsidianNoir", "Atom 81 Pro|IvoryElegance", "Atom 81 Pro|SlateFusion", "Ad 121Pro Plus|Black", "Ad 121Pro Plus|Blue", "Ad 161 Anc Elite|Black", "Ad 161 Anc Elite|White", "Ad 161 Anc Elite|Blue", "Nirvana Ion ANC Pro|RoseQuartz", "Nirvana Ion ANC Pro|BlazingComet", "Nirvana Ion ANC Pro|NorthernLights", "Nirvana Ion ANC Pro|Crystal Black", "Nirvana Ion ANC Pro|Quartz White", "Ad Nirvana Crystal|Quantum Black", "Ad Nirvana Crystal|Blazing Red", "Ad Nirvana Crystal|Yellow Pop", "Ad Nirvana Crystal|White Lustre", "Ad 800 Hidef|Graphite Grey", "Ad 800 Hidef|Sterling Silver", "Ad 800 Hidef|Azure Blue", "Ad 800 Hidef|Emerald Green", "Ad 131 Pro Buds|Active Black", "Ad 131 Pro Buds|Slate Blue", "Ad 131 Pro Buds|Coco Brown", "Ad 301|Sunset Blush", "Ad 301|Arctic Whisper", "Ad 301|Midnight Shadow", "Ad 301|Velvet Rouge", "Ad 131 Elite Anc|Active Black", "Ad 131 Elite Anc|Active White", "Ad 131 Elite Anc|Dawn Blue", "Ad 131 Elite Anc|ActiveTeal", "Ad Primo|Black", "Ad 181 Pro|Lilac Serenity", "Ad 181 Pro|Frosted Mint", "Ad 181 Pro|Coral Bloom", "Ad 181 Pro|Mocha Elegance", "Ad 191 Anc|Pellucid White", "Ad 191 Anc|Pellucid Orange", "Ad 191 Anc|Pellucid Green", "Ad 191 Anc|Pellucid Red", "Ad 191 Anc|Pellucid Blue", "Ad 280 Anc|Active Black", "Ad 280 Anc|Mint Blue", "Ad Unity ANC|Grey", "Ad Unity ANC|Black", "Ad Nirvana Iris|Black", "Ad Nirvana Iris|White", "Ad Nirvana X|Galactic Red", "Ad Nirvana X|Smoky Amethyst", "Ad Nirvana X|Mist Blue", "Ad Nirvana X|Cosmic Onyx", "Ad 91 Prime|Midnight Black", "Ad 91 Prime|Sonic Silver", "Ad 111v2|White", "Ad 111v2|Black", "Ad 280 Anc|Green", "Ad Ultra Pro|Zinc White", "Ad Ultra Pro|Gunmetal Black", "Ad Plus 311|Ash Grey", "Ad Plus 311|Charcoal Black", "Ad Plus 311|Crimsom Red", "Ad Plus 311|Midnight Blue", "Ad Plus 318|Active Black", "Ad Plus 318|StarryBlue", "Ad 213|Berry Blue", "Ad 213|Sandstone", "Ad 213|Shadow Black", "Ad 141 Gen 2|Active White", "Ad 141 Gen 2|Grey", "Ad 141 Gen 2|Active Black", "Ad 141 Gen 2|Orange", "Ad 141 Gen 2|Teal", "Ad 148 Gen 2|Active White", "Ad 148 Gen 2|Grey", "Ad 148 Gen 2|Orange", "Ad 148 Gen 2|Teal", "Ad 148 Gen 2|Active Black", "Ad 212|Ivory", "Ad 212|Noir Black", "Ad 212|Peach Blush", "Ad Prime 412|Lunar White", "Ad Prime 412|Midnight Black", "Ad Prime 412|Sahara Chic", "Ad 131 Gen 2|CarbonBlack", "Ad 131 Gen 2|Cream White", "Ad 131 Gen 2|Ice Blue", "Ad 313|CarbonBlack", "Ad 313|Gold Mist", "Ad 313|Jade Green", "HMD P60|Black", "HMD P60|White", "HMD P60|Green", "Ad Alpha Gen 2|Midnight Black", "Ad Alpha Gen 2|Slate Grey", "Ad Alpha Gen 2|Ocean Blue", "Ad Ace Gen 2|Shadow Black", "Ad Ace Gen 2|Moon White", "Ad Ace Gen 2|Mystic Blue", "HMD S60|Grey", "HMD S60|Purple", "HMD P50|Black", "HMD P50|White", "HMD P50|Blue", "HMD X50|Black", "HMD X50|White", "HMD X50 Pro|Silver", "HMD X50 Pro|Blue", "HMD P70|Black", "HMD P70|White", "Amazon basics|Black", "Ad Prime 513 Anc|Carbon Black", "Ad Prime 513 Anc|Ivory Glow", "Ad Pulse|Shadow Black", "Ad 138 Gen 2|CarbonBlack", "Ad 138 Gen 2|Cream White", "Ad 701 Anc|Blue", "Ad 701 Anc|Grey", "Dashcam Hive E1|Black", "Dashcam Hive F1|Blue"
     ];
 
-    // Process List into Object for Dropdowns
     const modelMap = {};
     rawModelList.forEach(item => {
         const [model, color] = item.split('|');
@@ -247,7 +162,6 @@
         if (color) modelMap[model].push(color);
     });
 
-    // Populate Dropdowns on Load
     window.onload = function() {
         populateDropdown('upModel');
         populateDropdown('planModel');
@@ -267,7 +181,6 @@
         const model = document.getElementById(prefix + 'Model').value;
         const colorSelect = document.getElementById(prefix + 'Color');
         colorSelect.innerHTML = '<option value="">Select Color</option>';
-        
         if (model && modelMap[model]) {
             modelMap[model].forEach(c => {
                 const opt = document.createElement('option');
@@ -278,11 +191,10 @@
         }
     }
 
-    // --- BOM UPLOAD & SAVE LOGIC ---
+    // --- 2. UPLOAD BOM (Creates New Tab) ---
     function processAndUploadBOM() {
         const model = document.getElementById('upModel').value;
         const color = document.getElementById('upColor').value;
-        const product = document.getElementById('upProduct').value;
         const fileInput = document.getElementById('bomFile');
 
         if(!model || !color || !fileInput.files[0]) {
@@ -294,32 +206,45 @@
         reader.onload = function(e) {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, {type: 'array'});
-            const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+            const firstSheet = workbook.SheetNames[0];
+            const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet]);
 
-            // Extract Clean Data
-            const rows = jsonData.map(row => ({
-                partCode: row['PartCode'] || row['Part Code'] || row['Material'],
-                partName: row['PartName'] || row['Description'] || row['Name'],
-                qpa: parseFloat(row['QPA'] || row['Quantity'] || 0)
-            })).filter(r => r.partCode); // Only valid rows
+            // --- HEADER MAPPING (Based on Screenshot) ---
+            const rows = [];
+            let headerMissing = false;
 
-            // Keep in memory for calculation
-            // We tag them with current selection so we know what they are
-            loadedBOM = rows.map(r => ({ ...r, Model: model, Color: color }));
+            jsonData.forEach(row => {
+                // Mapping keys from your Screenshot
+                let pCode = row['Component'] || row['Material'] || row['Part Code'];
+                let pName = row['Item Desc'] || row['Description'] || row['Name'];
+                let qpa = row['QPA'] || row['Quantity'] || row['Qty'];
+                let mpn = row['MPN'] || ""; // Optional
+
+                if (pCode && qpa !== undefined) {
+                    rows.push({ partCode: pCode, partName: pName, qpa: parseFloat(qpa), mpn: mpn });
+                }
+            });
+
+            if (rows.length === 0) {
+                alert("Error: File mein headers match nahi hue. Please ensure columns 'Component', 'Item Desc', and 'QPA' exist.");
+                return;
+            }
+
+            // Save to Current Memory (so we can plan immediately)
+            currentBOM = rows; 
 
             // Send to Google Sheet
-            sendToGoogleSheet({
+            sendToCloud({
                 type: 'bom',
                 model: model,
                 color: color,
-                product: product,
                 rows: rows
             }, 'bomMsg');
         };
         reader.readAsArrayBuffer(fileInput.files[0]);
     }
 
-    // --- SAP UPLOAD LOGIC ---
+    // --- 3. UPLOAD SAP (Single Sheet) ---
     function processSAP() {
         const fileInput = document.getElementById('sapFile');
         if(!fileInput.files[0]) return alert("Select SAP File");
@@ -328,117 +253,113 @@
         reader.onload = function(e) {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, {type: 'array'});
-            const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+            const firstSheet = workbook.SheetNames[0];
+            const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet]);
 
             sapData = {};
             const rowsToSend = [];
 
             jsonData.forEach(row => {
-                let code = row['PartCode'] || row['Material'] || row['Part Code'];
-                let qty = parseFloat(row['Stock'] || row['Unrestricted'] || 0);
+                // Adjust SAP headers as needed
+                let code = row['Part Code'] || row['Material'] || row['PartCode'];
+                let qty = row['Stock'] || row['Unrestricted'] || row['Quantity'];
+                
                 if(code) {
-                    sapData[code] = qty;
-                    rowsToSend.push({partCode: code, stock: qty});
+                    let val = parseFloat(qty) || 0;
+                    sapData[code] = val;
+                    rowsToSend.push({partCode: code, stock: val});
                 }
             });
 
-            // Send to Google Sheet (Optional, but good for record)
-             sendToGoogleSheet({
-                type: 'sap',
-                rows: rowsToSend
-            }, 'sapMsg');
+            sendToCloud({ type: 'sap', rows: rowsToSend }, 'sapMsg');
         };
         reader.readAsArrayBuffer(fileInput.files[0]);
     }
 
-    // --- GOOGLE SHEET CONNECTOR ---
-    function sendToGoogleSheet(payload, msgId) {
-        if(SCRIPT_URL === "https://script.google.com/macros/s/AKfycbyEZvlCWSsPDhfmMKhWRw9pS2OrpYQlCbMbrE70t3hr7noQf4A6rndby_wm6aajJA7Xrw/exec") {
-            alert("Error: Google Script URL set nahi kiya hai code mein!");
+    // --- 4. CLOUD COMMUNICATION ---
+    function sendToCloud(payload, msgId) {
+        if(SCRIPT_URL.includes("YOUR_GOOGLE_SCRIPT")) {
+            alert("Error: Script URL set nahi kiya hai! Code check karein.");
             return;
         }
 
         document.getElementById('loader').style.display = 'block';
-        
+        const msgEl = document.getElementById(msgId);
+        msgEl.innerHTML = "";
+
         fetch(SCRIPT_URL, {
             method: 'POST',
-            mode: 'no-cors', // Important for Google Script
+            mode: 'no-cors', // Essential
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         })
         .then(() => {
             document.getElementById('loader').style.display = 'none';
-            document.getElementById(msgId).innerHTML = '<div class="alert alert-success">Data Loaded & Saved to Google Sheet Successfully!</div>';
+            msgEl.innerHTML = `<div class="alert alert-success">✅ Success! Data sent to Google Sheets.</div>`;
             
-            // Auto switch tab if BOM loaded
+            // Auto switch to Plan tab if BOM
             if(payload.type === 'bom') {
-                // Pre-fill planning tab
                 document.getElementById('planModel').value = payload.model;
                 updateColors('plan');
                 document.getElementById('planColor').value = payload.color;
-                setTimeout(() => {
-                    var triggerEl = document.querySelector('#myTab button[data-bs-target="#plan"]');
-                    bootstrap.Tab.getInstance(triggerEl).show();
-                }, 1000);
             }
         })
         .catch(err => {
             document.getElementById('loader').style.display = 'none';
-            alert("Error saving to cloud: " + err);
+            alert("Error: " + err);
         });
     }
 
-    // --- CALCULATION LOGIC ---
-    function calculate() {
+    // --- 5. CALCULATION LOGIC ---
+    function calculatePlan() {
         const qty = parseFloat(document.getElementById('wipQty').value);
-        if(!qty) return alert("Enter WIP Quantity");
-
-        const tbody = document.querySelector('#resultTable tbody');
-        tbody.innerHTML = '';
-        calculatedResults = [];
-
-        // BOM is already in memory from Upload Step (loadedBOM)
-        if(loadedBOM.length === 0) {
-            alert("Please upload BOM in Tab 1 first.");
+        if(!qty || currentBOM.length === 0) {
+            alert("Ensure BOM is uploaded and WIP Qty is entered.");
             return;
         }
 
-        loadedBOM.forEach(item => {
-            const req = item.qpa * qty;
-            const sapStock = sapData[item.partCode] || 0;
-            const diff = sapStock - req;
+        const tbody = document.querySelector('#resultTable tbody');
+        tbody.innerHTML = '';
+        finalResults = [];
 
-            calculatedResults.push({
+        currentBOM.forEach(item => {
+            const req = item.qpa * qty;
+            const stock = sapData[item.partCode] || 0;
+            const diff = stock - req;
+
+            finalResults.push({
                 "Part Code": item.partCode,
-                "Part Name": item.partName,
+                "Description": item.partName,
                 "QPA": item.qpa,
-                "Required Qty": req,
-                "SAP Stock": sapStock,
+                "Total Required": req,
+                "SAP Stock": stock,
                 "Difference": diff
             });
 
-            const row = `
+            const tr = `
                 <tr>
                     <td>${item.partCode}</td>
-                    <td>${item.partName}</td>
+                    <td>${item.partName || '-'}</td>
                     <td>${item.qpa}</td>
-                    <td>${req}</td>
-                    <td>${sapStock}</td>
+                    <td><strong>${req}</strong></td>
+                    <td>${stock}</td>
                     <td class="${diff < 0 ? 'text-danger fw-bold' : 'text-success'}">${diff}</td>
                 </tr>
             `;
-            tbody.innerHTML += row;
+            tbody.innerHTML += tr;
         });
+        
+        document.getElementById('planTitle').innerText = `Result for ${qty} Units`;
     }
 
     function downloadExcel() {
-        if(calculatedResults.length === 0) return alert("No data to download");
-        const ws = XLSX.utils.json_to_sheet(calculatedResults);
+        if(finalResults.length === 0) return alert("No data to download");
+        const ws = XLSX.utils.json_to_sheet(finalResults);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "ShortageReport");
+        XLSX.utils.book_append_sheet(wb, ws, "Shortage_Report");
         XLSX.writeFile(wb, "Production_Plan.xlsx");
     }
-
 </script>
+
 </body>
 </html>
