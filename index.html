@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Production WIP Calculator</title>
+    <title>Production Planner Pro</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -14,13 +14,13 @@
             padding-bottom: 50px;
         }
         .main-container {
-            max-width: 1350px; 
+            max-width: 1450px; 
             background: white; 
             padding: 30px; 
             border-radius: 15px; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
             margin-top: 20px;
-            border-top: 6px solid #ff4b1f; /* Brand Color Line */
+            border-top: 6px solid #ff4b1f;
         }
         .logo-container img {
             max-height: 80px;
@@ -36,8 +36,6 @@
             color: white !important;
             border: none;
         }
-        
-        /* Queue Box styling */
         .queue-box {
             background: #f8f9fa;
             border-left: 5px solid #28a745;
@@ -45,8 +43,6 @@
             border-radius: 8px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
-
-        /* Table Styling */
         .table-responsive {
             max-height: 550px;
             overflow-y: auto;
@@ -60,16 +56,12 @@
             color: white; 
             z-index: 1;
             font-weight: 500;
+            font-size: 13px;
         }
-        
-        /* RESULT COLORS */
         .row-running { background-color: #ffffff; }
         .row-alternate { background-color: #fff9db; color: #856404; font-style: italic; }
-        
-        .val-negative { color: #d63031; font-weight: 800; } /* Red */
-        .val-positive { color: #00b894; font-weight: 800; } /* Green */
-        
-        /* Loader */
+        .val-negative { color: #d63031; font-weight: 800; }
+        .val-positive { color: #00b894; font-weight: 800; }
         .loader-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(255,255,255,0.95); z-index: 9999;
@@ -79,15 +71,12 @@
 </head>
 <body>
 
-<!-- Loader -->
 <div id="loader" class="loader-overlay" style="display:none;">
     <div class="spinner-border text-primary" style="width: 4rem; height: 4rem;"></div>
     <h4 class="mt-3 text-secondary" id="loaderText">Processing...</h4>
 </div>
 
 <div class="container main-container">
-    
-    <!-- HEADER & LOGO -->
     <div class="text-center logo-container">
         <img src="https://i.postimg.cc/5y7SN4xc/logo.png" alt="Company Logo">
         <h2 class="fw-bold text-dark">Production Inventory Planner</h2>
@@ -100,7 +89,6 @@
         </button>
     </div>
 
-    <!-- TABS -->
     <ul class="nav nav-tabs nav-fill mb-4" id="mainTabs" role="tablist">
         <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab0">📂 Dashboard</button></li>
         <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab1">1️⃣ Upload BOM</button></li>
@@ -109,8 +97,7 @@
     </ul>
 
     <div class="tab-content">
-        
-        <!-- DASHBOARD -->
+        <!-- TABS Content remains same until calculate logic -->
         <div class="tab-pane fade" id="tab0">
             <h5 class="text-primary mb-3">Uploaded Models (Cloud Database)</h5>
             <div class="list-group shadow-sm" id="uploadedList">
@@ -118,7 +105,6 @@
             </div>
         </div>
         
-        <!-- UPLOAD BOM -->
         <div class="tab-pane fade show active" id="tab1">
             <div class="card border-0 shadow-sm p-4">
                 <div class="row g-3">
@@ -150,15 +136,12 @@
             <div id="bomMsg" class="mt-3 text-center fw-bold"></div>
         </div>
 
-        <!-- UPLOAD SAP -->
         <div class="tab-pane fade" id="tab2">
             <div class="card border-0 shadow-sm p-4">
                 <div class="row justify-content-center">
                     <div class="col-md-10">
                         <label class="fw-bold mb-2">SAP Inventory File</label>
                         <input type="file" class="form-control mb-3" id="sapFile" onchange="previewSAP(this)">
-                        
-                        <!-- SAP MAPPING BOX -->
                         <div id="sapPreviewBox" style="display:none; background:#fff3cd; padding:20px; border-radius:10px; border:1px solid #ffeeba;">
                             <h6 class="text-dark fw-bold">⚠️ Map Columns Manually</h6>
                             <div class="row g-2 mb-3">
@@ -188,10 +171,7 @@
             <div id="sapMsg" class="mt-3 text-center fw-bold"></div>
         </div>
 
-        <!-- PRODUCTION PLAN -->
         <div class="tab-pane fade" id="tab3">
-            
-            <!-- QUEUE INPUT -->
             <div class="queue-box mb-4">
                 <h5 class="fw-bold text-success mb-3">➕ Add Job to Plan</h5>
                 <div class="row g-3 align-items-end">
@@ -225,7 +205,6 @@
                 </div>
             </div>
 
-            <!-- JOB QUEUE TABLE -->
             <div class="mb-3">
                 <table class="table table-sm table-bordered text-center" id="queueTable">
                     <thead class="table-light">
@@ -238,24 +217,13 @@
                 </button>
             </div>
 
-            <!-- FINAL RESULT -->
             <div class="table-responsive bg-white">
                 <div class="d-flex justify-content-between align-items-center bg-secondary text-white p-2">
                     <h6 class="m-0">Shortage Report</h6>
                     <button class="btn btn-light btn-sm fw-bold" onclick="downloadExcel()">📥 Download Excel</button>
                 </div>
                 <table class="table table-bordered table-hover mt-0" id="resTable">
-                    <thead style="background:#e0e0e0;">
-                        <tr>
-                            <th>Prio</th>
-                            <th>Part Code</th>
-                            <th>Description</th>
-                            <th>QPA</th>
-                            <th>Required</th>
-                            <th>Stock (Line)</th>
-                            <th>Diff</th>
-                        </tr>
-                    </thead>
+                    <thead><!-- Dynamically generated --></thead>
                     <tbody></tbody>
                 </table>
             </div>
@@ -266,154 +234,105 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    // ⚠️⚠️ PASTE YOUR GOOGLE SCRIPT URL HERE ⚠️⚠️
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz5_UxG8d6_ncMMWntP5dkv0N-IIW8LU3kKg2Uyb2s7C7MLVGM1jQzPVRFM-QygIFzieA/exec"; 
 
-    // --- LINE DATA ---
     const lineData = {
         "Earbuds": Array.from({length: 24}, (_, i) => `9B${String(i+1).padStart(2, '0')}`),
         "Charging Case": Array.from({length: 24}, (_, i) => `9C${String(i+1).padStart(2, '0')}`)
     };
 
-    // --- VARIABLES ---
     let sapData = {};    
     let sapRawData = [];
     let productionQueue = []; 
     let finalResults = [];
 
-    // --- CLEANER ---
     function cleanKey(val) { return String(val).replace(/[\s\u00A0]+/g, "").toUpperCase().trim(); }
 
-    // --- MODEL LIST (STRICT VALIDATION) ---
-    const rawModelList = [
-        "Ad131|Black", "Ad131|Blue", "Ad 91|MistGrey", "Ad 91|Black", "Ad 91|Blue", "Ad 800 Hidef|Graphite Grey"
-        // Add all your models here
-    ];
+    // MODEL LIST DATA
+    const rawModelList = ["Ad131|Black", "Ad131|Captain'sBlue", "Ad131|CherryBlossom", "Ad131|CrimsonCream", "Ad131|Iron'sBlood", "Ad131|White", "Ad131|King'sBlack", "Ad131|Blue", "Ad131|Green", "Ad138|Black", "Ad138|IvoryWhite", "Ad138|Blue", "Ad138|Green", "Ad141|Black", "Ad141|Cyancider", "Ad141|White", "Ad148|Black", "Ad148|Cyancider", "Ad148|White", "Ad161|Coolsapphire", "Ad161|White", "Ad161|Black", "Ad131|KinghtBlack", "Ad131|KryptonBlue", "Ad131 Pro|Black", "Ad131 Pro|MintBubblegum", "Ad131 Pro|MintCascade", "Ad131 Pro|Blue", "Ad121 Pro|Black", "Ad121 Pro|MintCascade", "Ad121 Pro|Blue", "Ad121 Pro|Mint BubbleGum", "AD181|CoolGrey", "AD181|BoldBlue", "AD181|SpiritWhite", "AD181|CarbonBlack", "IMT121|Black", "IMT131|Black", "Ad190|Black", "Ad190|White", "Ad 192|Black", "Ad 192|White", "IMT121|White", "Atom81|OpalBlack", "Atom81|AeroBlue", "Atom81|PearlWhite", "AD183|Black", "AD183|White", "AD183|Grey", "AD100|Blue", "AD100|Black", "AD100|Green", "AD163|Blue", "AD163|White", "AD163|Black", "Ad138 Pro|Black", "Ad138 Pro|Blue", "Ad138 Pro|MintCascade", "IMT131|White", "AD191 G|Blue", "AD191 G|White", "AD191 G|Red", "Atom 83|Black", "Nirvana|White", "Nirvana|Black", "Nirvana ION N Mold|Black", "Ad170|Blue", "Ad170|Black", "Ad170|White", "Atom 83|White", "Atom 83|Blue", "Alpha|JetBlack", "Alpha|DarkCyan", "Alpha|SwedishWhite", "Alpha|AssassinBlack", "Alpha|Pine Green", "Alpha|Deep Blue", "Alpha|Peach Dusk", "IMT161|Black", "IMT161|White", "IMT128|Black", "IMT128|White", "IMT101|Black", "IMT101|White", "Ad125|Black", "Ad125|Blue", "Ad125|White", "Airdopes 207|CarbonBlack", "Airdopes 207|IvoryWhite", "Airdopes 207|Bold Blue", "AD Kick|CarbonBlack", "AD Kick|White", "AD Kick|Bold Blue", "Max|Black", "Max|White", "Max|Blue", "AD Hype|OpalBlack", "AD Hype|AeroBlue", "AD Hype|PearlWhite", "Zing|Black", "Zing|Blue", "Zing|White", "Ad161|OliveGreen", "Ad141|Green", "IMT181|BlackSabre", "IMT181|White", "Joy|JetBlack", "Joy|DarkCyan", "Joy|SwedishWhite", "Ace|Black", "Ace|Blue", "Ace|Green", "Ad161|AssassinRed", "Ad161|ElectricBlue", "Ad161|GreenFury", "Ad161|ThunderBlue", "IMT 100|Black", "IMT 100|White", "Nirvana Ion (ANC)|Black", "Nirvana Ion (ANC)|White", "IMT121|Spider-Man", "IMT121|Greengiant", "Ad 118|Black", "Ad 118|Blue", "Ad 118|Green", "AD161 Pro-Buds|SleekBlack", "AD161 Pro-Buds|Blue", "AD161 Pro-Buds|GreenCyan", "Nirvana Ion (ANC)|RoseQuartz", "Nirvana Ion (ANC)|BlazingComet", "Nirvana Ion (ANC)|NorthernLights", "AD Supreme|Black", "AD Supreme|White", "AD Supreme|Blue", "AD Supreme|SageGreen", "AD Supreme|MetallicGrey", "AD Supreme|SereneGreen", "AD 71|ActiveBlack", "AD 71|StarryBlue", "AD 71|FrostWhite", "AD 71|Aqua Blue", "AD 71|Maroon Lush", "AD 71|Grey", "R 195 Pro|FieryBlack", "Ad138|CherryBlossom", "Ad 800|Black", "Ad 800|Blue", "Ultra Plus|Black", "Ultra Plus|SportyBlue", "Ultra Plus|OliveSlate", "Ultra Plus|Midnight Black", "Ad 91|MistGrey", "Ad 91|Black", "Ad 91|Blue", "Ad 800|Green", "Ad 300|GunmetalBlack", "Ad 300|ChromeWhite", "Ad 161 N|CarbonBlack", "Ad 161 N|AshGrey", "Ad 120|ActiveBlack", "Ad 120|DawnBlue", "Ad 120|IvoryWhite", "Ad 141 Anc|GunmetalBlack", "Ad 141 Anc|White", "Ad 141 Anc|Green", "Ad 141 Anc Elite|Black", "Ad 141 Anc Elite|White", "Ad 141 Anc Elite|Green", "Ad 141 Pro Buds|Obsidian Black", "Ad 141 Pro Buds|Surfer Silver", "Ad 141 Pro Buds|Galactic Purple", "Ad 141 Pro Buds|Martian Green", "Ad 311 Pro|ActiveBlack", "Ad 311 Pro|DuskBlue", "Ad 311 Pro|SpaceGrey", "Ad 311 Pro|LavenderRush", "Ad 161 Anc|Black", "Ad 161 Anc|Green", "Ad 161 Anc|White", "Ad 155|ActiveBlack", "Ad 155|IvoryWhite", "Ad 155|HotRouge", "Ad 155|ActiveTeal", "Ad 300|Purple", "Ad 800|White", "Atom 81 Pro|ObsidianNoir", "Atom 81 Pro|IvoryElegance", "Atom 81 Pro|SlateFusion", "Ad 121Pro Plus|Black", "Ad 121Pro Plus|Blue", "Ad 161 Anc Elite|Black", "Ad 161 Anc Elite|White", "Ad 161 Anc Elite|Blue", "Nirvana Ion ANC Pro|RoseQuartz", "Nirvana Ion ANC Pro|BlazingComet", "Nirvana Ion ANC Pro|NorthernLights", "Nirvana Ion ANC Pro|Crystal Black", "Nirvana Ion ANC Pro|Quartz White", "Ad Nirvana Crystal|Quantum Black", "Ad Nirvana Crystal|Blazing Red", "Ad Nirvana Crystal|Yellow Pop", "Ad Nirvana Crystal|White Lustre", "Ad 800 Hidef|Graphite Grey", "Ad 800 Hidef|Sterling Silver", "Ad 800 Hidef|Azure Blue", "Ad 800 Hidef|Emerald Green", "Ad 131 Pro Buds|Active Black", "Ad 131 Pro Buds|Slate Blue", "Ad 131 Pro Buds|Coco Brown", "Ad 301|Sunset Blush", "Ad 301|Arctic Whisper", "Ad 301|Midnight Shadow", "Ad 301|Velvet Rouge", "Ad 131 Elite Anc|Active Black", "Ad 131 Elite Anc|Active White", "Ad 131 Elite Anc|Dawn Blue", "Ad 131 Elite Anc|ActiveTeal", "Ad Primo|Black", "Ad 181 Pro|Lilac Serenity", "Ad 181 Pro|Frosted Mint", "Ad 181 Pro|Coral Bloom", "Ad 181 Pro|Mocha Elegance", "Ad 191 Anc|Pellucid White", "Ad 191 Anc|Pellucid Orange", "Ad 191 Anc|Pellucid Green", "Ad 191 Anc|Pellucid Red", "Ad 191 Anc|Pellucid Blue", "Ad 280 Anc|Active Black", "Ad 280 Anc|Mint Blue", "Ad Unity ANC|Grey", "Ad Unity ANC|Black", "Ad Nirvana Iris|Black", "Ad Nirvana Iris|White", "Ad Nirvana X|Galactic Red", "Ad Nirvana X|Smoky Amethyst", "Ad Nirvana X|Mist Blue", "Ad Nirvana X|Cosmic Onyx", "Ad 91 Prime|Midnight Black", "Ad 91 Prime|Sonic Silver", "Ad 111v2|White", "Ad 111v2|Black", "Ad 280 Anc|Green", "Ad Ultra Pro|Zinc White", "Ad Ultra Pro|Gunmetal Black", "Ad Plus 311|Ash Grey", "Ad Plus 311|Charcoal Black", "Ad Plus 311|Crimsom Red", "Ad Plus 311|Midnight Blue", "Ad Plus 318|Active Black", "Ad Plus 318|StarryBlue", "Ad 213|Berry Blue", "Ad 213|Sandstone", "Ad 213|Shadow Black", "Ad 141 Gen 2|Active White", "Ad 141 Gen 2|Grey", "Ad 141 Gen 2|Active Black", "Ad 141 Gen 2|Orange", "Ad 141 Gen 2|Teal", "Ad 148 Gen 2|Active White", "Ad 148 Gen 2|Grey", "Ad 148 Gen 2|Orange", "Ad 148 Gen 2|Teal", "Ad 148 Gen 2|Active Black", "Ad 212|Ivory", "Ad 212|Noir Black", "Ad 212|Peach Blush", "Ad Prime 412|Lunar White", "Ad Prime 412|Midnight Black", "Ad Prime 412|Sahara Chic", "Ad 131 Gen 2|CarbonBlack", "Ad 131 Gen 2|Cream White", "Ad 131 Gen 2|Ice Blue", "Ad 313|CarbonBlack", "Ad 313|Gold Mist", "Ad 313|Jade Green", "HMD P60|Black", "HMD P60|White", "HMD P60|Green", "Ad Alpha Gen 2|Midnight Black", "Ad Alpha Gen 2|Slate Grey", "Ad Alpha Gen 2|Ocean Blue", "Ad Ace Gen 2|Shadow Black", "Ad Ace Gen 2|Moon White", "Ad Ace Gen 2|Mystic Blue", "HMD S60|Grey", "HMD S60|Purple", "HMD P50|Black", "HMD P50|White", "HMD P50|Blue", "HMD X50|Black", "HMD X50|White", "HMD X50 Pro|Silver", "HMD X50 Pro|Blue", "HMD P70|Black", "HMD P70|White", "Amazon basics|Black", "Ad Prime 513 Anc|Carbon Black", "Ad Prime 513 Anc|Ivory Glow", "Ad Pulse|Shadow Black", "Ad 138 Gen 2|CarbonBlack", "Ad 138 Gen 2|Cream White", "Ad 701 Anc|Blue", "Ad 701 Anc|Grey", "Dashcam Hive E1|Black", "Dashcam Hive E1|Blue"];
     
-    // Create Map and Keys Array for Validation
     const modelMap = {};
     const validModelNames = [];
-
     rawModelList.forEach(item => {
         const [model, color] = item.split('|');
-        if (!modelMap[model]) {
-            modelMap[model] = [];
-            validModelNames.push(model); // Store valid names
-        }
+        if (!modelMap[model]) { modelMap[model] = []; validModelNames.push(model); }
         if (color && !modelMap[model].includes(color)) modelMap[model].push(color);
     });
 
     window.onload = function() {
         populateDatalist();
-        document.getElementById('upModel').addEventListener('input', validateModelInput); // Live validation
+        document.getElementById('upModel').addEventListener('input', validateModelInput);
         fetchUploadedList();
     };
 
     function populateDatalist() {
         const list = document.getElementById('modelListOptions');
-        list.innerHTML = '';
         validModelNames.sort().forEach(m => list.appendChild(new Option(m, m)));
     }
 
-    // --- STRICT VALIDATION FUNCTION ---
     function validateModelInput() {
         const input = document.getElementById('upModel');
         const errorMsg = document.getElementById('modelError');
-        const val = input.value;
-        
-        // Check if value exists in valid list
-        if(val && !validModelNames.includes(val)) {
-            input.classList.add('is-invalid');
-            errorMsg.style.display = 'block';
-            updateColors('up', false); // Clear colors
+        if(input.value && !validModelNames.includes(input.value)) {
+            input.classList.add('is-invalid'); errorMsg.style.display = 'block'; updateColors('up', false);
         } else {
-            input.classList.remove('is-invalid');
-            errorMsg.style.display = 'none';
-            if(val) updateColors('up', true);
+            input.classList.remove('is-invalid'); errorMsg.style.display = 'none'; if(input.value) updateColors('up', true);
         }
     }
 
     function updateColors(prefix, isValid) {
         if(!isValid && prefix === 'up') return;
-        
         const val = document.getElementById(prefix + 'Model').value;
         const sel = document.getElementById(prefix + 'Color');
         sel.innerHTML = '<option value="">Select</option>';
-        
-        if (modelMap[val]) {
-            modelMap[val].forEach(c => sel.add(new Option(c, c)));
-        }
+        if (modelMap[val]) modelMap[val].forEach(c => sel.add(new Option(c, c)));
     }
 
     function updateLines() {
         const type = document.getElementById('planProduct').value;
         const lineSel = document.getElementById('planLine');
         lineSel.innerHTML = '<option value="">Select Line</option>';
-        if(lineData[type]) {
-            lineData[type].forEach(line => lineSel.add(new Option(line, line)));
-        }
+        if(lineData[type]) lineData[type].forEach(line => lineSel.add(new Option(line, line)));
     }
 
     function fetchUploadedList() {
-        const listContainer = document.getElementById('uploadedList');
-        fetch(`${SCRIPT_URL}?action=list`)
-        .then(res => res.json())
-        .then(data => {
+        fetch(`${SCRIPT_URL}?action=list`).then(res => res.json()).then(data => {
             let html = '';
             data.forEach(name => html += `<a href="#" class="list-group-item list-group-item-action py-2">✅ ${name}</a>`);
-            listContainer.innerHTML = html || '<div class="text-muted text-center">No BOMs uploaded yet.</div>';
+            document.getElementById('uploadedList').innerHTML = html || '<div class="text-muted text-center">No BOMs uploaded yet.</div>';
         });
     }
 
-    // --- 1. UPLOAD BOM (WITH RESTRICTION) ---
     function uploadBOM() {
         const model = document.getElementById('upModel').value;
         const color = document.getElementById('upColor').value;
         const fileInput = document.getElementById('bomFile');
-
-        // STRICT CHECK
-        if(!validModelNames.includes(model)) {
-            alert("❌ ERROR: Model Name list mein nahi hai. Kripya list se select karein.");
-            return;
-        }
-        if(!color || !fileInput.files[0]) return alert("Please fill all fields.");
-
+        if(!validModelNames.includes(model)) return alert("Invalid Model");
+        if(!color || !fileInput.files[0]) return alert("All fields required");
         document.getElementById('loader').style.display = 'flex';
-        document.getElementById('loaderText').innerText = "Uploading BOM...";
-
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = e => {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, {type: 'array'});
             const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1});
-            sendToCloud({ type: 'bom', model: model, color: color, rows: jsonData }, 'bomMsg');
+            sendToCloud({ type: 'bom', model, color, rows: jsonData }, 'bomMsg');
         };
         reader.readAsArrayBuffer(fileInput.files[0]);
     }
 
-    // --- 2. UPLOAD SAP ---
     function previewSAP(input) {
         if(!input.files[0]) return;
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = e => {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, {type: 'array'});
             sapRawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1});
-            
             document.getElementById('sapPreviewBox').style.display = 'block';
             const table = document.getElementById('sapPreviewTable');
             table.innerHTML = '';
             const colSelects = [document.getElementById('sapColPart'), document.getElementById('sapColStock'), document.getElementById('sapColLine')];
             colSelects.forEach(sel => sel.innerHTML = '<option value="-1">Select...</option>');
-
-            for(let i=0; i < Math.min(3, sapRawData.length); i++) {
-                let tr = document.createElement('tr');
-                sapRawData[i].forEach((cell, idx) => {
-                    let td = document.createElement(i===0 ? 'th' : 'td'); td.innerText = cell; tr.appendChild(td);
-                    if(i===0) colSelects.forEach(sel => sel.add(new Option(`Col ${idx+1}: ${cell}`, idx)));
-                });
-                table.appendChild(tr);
-            }
+            sapRawData[0].forEach((cell, idx) => colSelects.forEach(sel => sel.add(new Option(`Col ${idx+1}: ${cell}`, idx))));
         };
         reader.readAsArrayBuffer(input.files[0]);
     }
@@ -422,38 +341,24 @@
         const cIdx = parseInt(document.getElementById('sapColPart').value);
         const sIdx = parseInt(document.getElementById('sapColStock').value);
         const lIdx = parseInt(document.getElementById('sapColLine').value);
-
-        if(cIdx === -1 || sIdx === -1 || lIdx === -1) return alert("All 3 columns must be mapped!");
-
+        if(cIdx === -1 || sIdx === -1 || lIdx === -1) return alert("Map all columns!");
         sapData = {}; 
-        
         for(let i=1; i < sapRawData.length; i++) {
             let r = sapRawData[i];
             if(r[cIdx]) {
-                let partKey = cleanKey(r[cIdx]);
-                let lineKey = cleanKey(r[lIdx]);
-                let val = parseFloat(r[sIdx]) || 0;
-                
-                if(!sapData[partKey]) sapData[partKey] = {};
-                if(sapData[partKey][lineKey]) sapData[partKey][lineKey] += val;
-                else sapData[partKey][lineKey] = val;
+                let pK = cleanKey(r[cIdx]), lK = cleanKey(r[lIdx]), v = parseFloat(r[sIdx]) || 0;
+                if(!sapData[pK]) sapData[pK] = {};
+                sapData[pK][lK] = (sapData[pK][lK] || 0) + v;
             }
         }
         document.getElementById('sapPreviewBox').style.display = 'none';
         sendToCloud({ type: 'sap', rows: sapRawData }, 'sapMsg');
     }
 
-    // --- 3. QUEUE ---
     function addToQueue() {
-        const line = document.getElementById('planLine').value;
-        const model = document.getElementById('planModel').value;
-        const color = document.getElementById('planColor').value;
-        const qty = parseFloat(document.getElementById('planQty').value);
-
-        // Validation for Plan
-        if(!modelMap[model]) return alert("Invalid Model");
-        if(!line || !color || !qty) return alert("Fill all fields");
-
+        const line = document.getElementById('planLine').value, model = document.getElementById('planModel').value, 
+              color = document.getElementById('planColor').value, qty = parseFloat(document.getElementById('planQty').value);
+        if(!line || !model || !color || !qty) return alert("Fill all fields");
         productionQueue.push({line, model, color, qty});
         renderQueue();
     }
@@ -462,123 +367,101 @@
         const tbody = document.querySelector('#queueTable tbody');
         tbody.innerHTML = '';
         productionQueue.forEach((item, index) => {
-            tbody.innerHTML += `<tr><td>${item.line}</td><td>${item.model}</td><td>${item.color}</td><td>${item.qty}</td><td><button class="btn btn-danger btn-sm py-0" onclick="removeFromQueue(${index})">❌</button></td></tr>`;
+            tbody.innerHTML += `<tr><td>${item.line}</td><td>${item.model}</td><td>${item.color}</td><td>${item.qty}</td><td><button class="btn btn-danger btn-sm py-0" onclick="productionQueue.splice(${index},1);renderQueue()">❌</button></td></tr>`;
         });
     }
-    function removeFromQueue(idx) { productionQueue.splice(idx, 1); renderQueue(); }
 
-    // --- 4. CALCULATION (1 DECIMAL FORMAT) ---
     async function calculateTotalShortage() {
-        if(productionQueue.length === 0) return alert("Add jobs to queue first.");
-        if(Object.keys(sapData).length === 0) return alert("SAP data missing.");
-
+        if(productionQueue.length === 0 || Object.keys(sapData).length === 0) return alert("Queue/SAP data missing");
         document.getElementById('loader').style.display = 'flex';
-        document.getElementById('loaderText').innerText = "Analyzing BOMs...";
         
-        let aggregatedParts = {}; 
+        let activeLines = [...new Set(productionQueue.map(j => j.line))].sort();
+        let aggregatedParts = {};
 
         for(let job of productionQueue) {
-            const sheetName = `${job.model.replace(/[\/\\?%*:|"<>]/g, "")} - ${job.color.replace(/[\/\\?%*:|"<>]/g, "")}`;
-            
+            const sName = `${job.model.replace(/[\/\\?%*:|"<>]/g, "")} - ${job.color.replace(/[\/\\?%*:|"<>]/g, "")}`;
             try {
-                const response = await fetch(`${SCRIPT_URL}?action=getBOM&sheetName=${encodeURIComponent(sheetName)}`);
-                const bomData = await response.json();
-                if(!bomData || bomData.length === 0) continue;
-
-                // Simple Header Scan
-                let cols = { partCode: -1, qpa: -1, desc: -1, priority: -1 };
-                for(let i=0; i < Math.min(25, bomData.length); i++) {
-                    const row = bomData[i].map(x => String(x).toLowerCase().trim());
-                    if (row.some(c => c.includes("component") || c.includes("item code"))) {
-                        cols.partCode = row.findIndex(c => c.includes("component") || c.includes("item code"));
-                        cols.qpa = row.findIndex(c => c === "qpa" || c.includes("qty"));
-                        cols.priority = row.findIndex(c => c.includes("priority"));
-                        cols.desc = row.findIndex(c => c.includes("desc"));
+                const res = await fetch(`${SCRIPT_URL}?action=getBOM&sheetName=${encodeURIComponent(sName)}`);
+                const bomData = await res.json();
+                if(!bomData) continue;
+                let cols = { partCode: 2, qpa: 5, desc: 3, prio: 8, group: 0 };
+                // Simple auto header detect
+                for(let i=0; i < Math.min(10, bomData.length); i++){
+                    let r = bomData[i].map(x => String(x).toLowerCase());
+                    if(r.includes("component") || r.includes("item code")){
+                        cols.partCode = r.findIndex(c => c.includes("component") || c.includes("item code"));
+                        cols.qpa = r.findIndex(c => c === "qpa" || c.includes("qty"));
+                        cols.prio = r.findIndex(c => c.includes("priority"));
+                        cols.desc = r.findIndex(c => c.includes("desc"));
+                        cols.group = r.findIndex(c => c.includes("group"));
                         break;
                     }
                 }
-                if(cols.partCode === -1) cols = { partCode: 2, qpa: 5, desc: 3, priority: 8 };
-
                 for(let i=0; i<bomData.length; i++) {
                     let r = bomData[i];
                     if(r[cols.partCode]) {
-                        let pCode = r[cols.partCode];
-                        let cleanPCode = cleanKey(pCode);
-                        let qpa = parseFloat(r[cols.qpa]) || 0;
-                        let prio = (cols.priority > -1 && r[cols.priority] !== undefined) ? parseInt(r[cols.priority]) : 0;
-                        
-                        let req = (prio === 0 || prio === 1) ? (qpa * job.qty) : 0;
-
-                        if(!aggregatedParts[cleanPCode]) aggregatedParts[cleanPCode] = { reqs: {}, details: { original: pCode, desc: r[cols.desc]||"", qpa: qpa, prio: prio } };
-                        if(!aggregatedParts[cleanPCode].reqs[job.line]) aggregatedParts[cleanPCode].reqs[job.line] = 0;
-                        aggregatedParts[cleanPCode].reqs[job.line] += req;
+                        let pK = cleanKey(r[cols.partCode]);
+                        let q = parseFloat(r[cols.qpa]) || 0, p = parseInt(r[cols.prio]) || 0, g = (cols.group > -1)?String(r[cols.group]||""): "";
+                        if(!aggregatedParts[pK]) aggregatedParts[pK] = { req: 0, groups: new Set(), d: { o: r[cols.partCode], desc: r[cols.desc]||"", q, p } };
+                        if(g) aggregatedParts[pK].groups.add(g);
+                        if(p === 0 || p === 1) aggregatedParts[pK].req += (q * job.qty);
                     }
                 }
-            } catch(e) { console.error(e); }
+            } catch(e) {}
         }
 
-        finalResults = [];
+        // Generate Header
+        let h = `<tr><th>Prio</th><th>Group</th><th>Part Code</th><th>Description</th><th>QPA</th><th>Required</th>`;
+        activeLines.forEach(l => h += `<th>${l}</th>`);
+        h += `<th>Total SAP Stock</th><th>Diff</th></tr>`;
+        document.querySelector('#resTable thead').innerHTML = h;
+
         const tbody = document.querySelector('#resTable tbody');
         tbody.innerHTML = '';
+        finalResults = [];
 
         Object.keys(aggregatedParts).forEach(key => {
-            let item = aggregatedParts[key];
-            let totalReq = 0;
-            let totalStock = 0;
-
-            Object.keys(item.reqs).forEach(line => {
-                totalReq += item.reqs[line];
-                if(sapData[key] && sapData[key][line]) totalStock += sapData[key][line];
-            });
-
-            let diff = totalStock - totalReq;
-            let isRunning = (item.details.prio === 0 || item.details.prio === 1);
-            let diffClass = '';
+            let item = aggregatedParts[key], lineSum = 0, globalSum = 0;
+            let rowObj = { "Prio": item.d.p, "Group": Array.from(item.groups).join(","), "Part": item.d.o, "Desc": item.d.desc, "QPA": item.d.q, "Req": item.req.toFixed(1) };
             
-            if(diff < 0) diffClass = 'val-negative';
-            else if(diff >= 0 && isRunning) diffClass = 'val-positive';
-            let rowClass = isRunning ? 'row-running' : 'row-alternate';
-
-            // DECIMAL FORMATTING (.1)
-            let dReq = totalReq.toFixed(1);
-            let dStock = totalStock.toFixed(1);
-            let dDiff = diff.toFixed(1);
-
-            finalResults.push({
-                "Priority": item.details.prio, "Part Code": item.details.original, "Description": item.details.desc,
-                "QPA": item.details.qpa, "Total Required": parseFloat(dReq), "Line Stock": parseFloat(dStock), "Diff": parseFloat(dDiff)
+            let lineStockHtml = '';
+            activeLines.forEach(l => {
+                let s = (sapData[key] && sapData[key][l]) ? sapData[key][l] : 0;
+                lineSum += s;
+                lineStockHtml += `<td>${s.toFixed(1)}</td>`;
+                rowObj[l] = s.toFixed(1);
             });
 
-            tbody.innerHTML += `<tr class="${rowClass}">
-                <td>${item.details.prio}</td><td>${item.details.original}</td><td>${item.details.desc}</td><td>${item.details.qpa}</td>
-                <td>${dReq}</td><td>${dStock}</td><td class="${diffClass}">${dDiff}</td>
+            if(sapData[key]) Object.values(sapData[key]).forEach(v => globalSum += v);
+            let diff = lineSum - item.req;
+            let isR = (item.d.p === 0 || item.d.p === 1);
+            
+            rowObj["Total Stock"] = globalSum.toFixed(1);
+            rowObj["Diff"] = diff.toFixed(1);
+            finalResults.push(rowObj);
+
+            tbody.innerHTML += `<tr class="${isR?'row-running':'row-alternate'}">
+                <td>${item.d.p}</td><td>${rowObj.Group}</td><td>${item.d.o}</td><td>${item.d.desc}</td><td>${item.d.q}</td><td>${rowObj.Req}</td>
+                ${lineStockHtml}<td>${globalSum.toFixed(1)}</td><td class="${diff<0?'val-negative':(isR?'val-positive':'')}">${diff.toFixed(1)}</td>
             </tr>`;
         });
-
         document.getElementById('loader').style.display = 'none';
     }
 
     function sendToCloud(payload, msgId) {
-        if(SCRIPT_URL.includes("YOUR")) return alert("URL Missing");
-        fetch(SCRIPT_URL, {
-            method: 'POST', mode: 'no-cors',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(payload)
-        }).then(() => {
+        fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) })
+        .then(() => { 
             document.getElementById('loader').style.display = 'none';
-            document.getElementById(msgId).innerHTML = '<div class="alert alert-success">✅ Upload Successful!</div>';
-            if(payload.type === 'bom') fetchUploadedList();
+            document.getElementById(msgId).innerHTML = '<div class="alert alert-success">✅ Done!</div>';
         });
     }
 
     function downloadExcel() {
-        if(finalResults.length === 0) return alert("Generate report first");
-        const ws = XLSX.utils.json_to_sheet(finalResults);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Shortage_Report");
-        XLSX.writeFile(wb, "Production_Plan.xlsx");
+        if(!finalResults.length) return alert("Generate report first");
+        const ws = XLSX.utils.json_to_sheet(finalResults), wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Report");
+        XLSX.writeFile(wb, "Production_Plan_Breakup.xlsx");
     }
 </script>
 </body>
 </html>
-
