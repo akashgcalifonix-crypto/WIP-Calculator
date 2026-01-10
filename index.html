@@ -7,66 +7,20 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        /* --- ATTRACTIVE DESIGN STYLES --- */
-        body { 
-            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%); 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            padding-bottom: 50px;
-        }
-        .main-container {
-            max-width: 1450px; 
-            background: white; 
-            padding: 30px; 
-            border-radius: 15px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
-            margin-top: 20px;
-            border-top: 6px solid #ff4b1f;
-        }
-        .logo-container img {
-            max-height: 80px;
-            margin-bottom: 20px;
-        }
-        .nav-tabs .nav-link {
-            font-weight: 600;
-            color: #555;
-            border-radius: 10px 10px 0 0;
-        }
-        .nav-tabs .nav-link.active {
-            background-color: #007bff;
-            color: white !important;
-            border: none;
-        }
-        .queue-box {
-            background: #f8f9fa;
-            border-left: 5px solid #28a745;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        .table-responsive {
-            max-height: 550px;
-            overflow-y: auto;
-            border-radius: 8px;
-            border: 1px solid #dee2e6;
-        }
-        thead th {
-            position: sticky; 
-            top: 0; 
-            background: #2d3436; 
-            color: white; 
-            z-index: 1;
-            font-weight: 500;
-            font-size: 13px;
-        }
+        /* --- DESIGN STYLES --- */
+        body { background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding-bottom: 50px; }
+        .main-container { max-width: 1550px; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-top: 20px; border-top: 6px solid #ff4b1f; }
+        .logo-container img { max-height: 80px; margin-bottom: 20px; }
+        .nav-tabs .nav-link { font-weight: 600; color: #555; border-radius: 10px 10px 0 0; }
+        .nav-tabs .nav-link.active { background-color: #007bff; color: white !important; border: none; }
+        .queue-box { background: #f8f9fa; border-left: 5px solid #28a745; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .table-responsive { max-height: 550px; overflow-y: auto; border-radius: 8px; border: 1px solid #dee2e6; }
+        thead th { position: sticky; top: 0; background: #2d3436; color: white; z-index: 1; font-weight: 500; font-size: 12px; white-space: nowrap; }
         .row-running { background-color: #ffffff; }
         .row-alternate { background-color: #fff9db; color: #856404; font-style: italic; }
         .val-negative { color: #d63031; font-weight: 800; }
         .val-positive { color: #00b894; font-weight: 800; }
-        .loader-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.95); z-index: 9999;
-            display: flex; justify-content: center; align-items: center; flex-direction: column;
-        }
+        .loader-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column; }
     </style>
 </head>
 <body>
@@ -84,9 +38,7 @@
     </div>
 
     <div class="d-flex justify-content-end mb-2">
-        <button class="btn btn-outline-primary btn-sm rounded-pill px-3" onclick="fetchUploadedList()">
-            🔄 Refresh Database
-        </button>
+        <button class="btn btn-outline-primary btn-sm rounded-pill px-3" onclick="fetchUploadedList()">🔄 Refresh Database</button>
     </div>
 
     <ul class="nav nav-tabs nav-fill mb-4" id="mainTabs" role="tablist">
@@ -97,12 +49,9 @@
     </ul>
 
     <div class="tab-content">
-        <!-- TABS Content remains same until calculate logic -->
         <div class="tab-pane fade" id="tab0">
             <h5 class="text-primary mb-3">Uploaded Models (Cloud Database)</h5>
-            <div class="list-group shadow-sm" id="uploadedList">
-                <div class="text-center p-4">Loading list...</div>
-            </div>
+            <div class="list-group shadow-sm" id="uploadedList"><div class="text-center p-4">Loading list...</div></div>
         </div>
         
         <div class="tab-pane fade show active" id="tab1">
@@ -120,17 +69,10 @@
                     </div>
                     <div class="col-md-4">
                         <label class="fw-bold text-secondary">Product Type</label>
-                        <select class="form-select" id="upProduct">
-                            <option>Earbuds</option><option>Charging Case</option><option>Smartwatch</option>
-                        </select>
+                        <select class="form-select" id="upProduct"><option>Earbuds</option><option>Charging Case</option><option>Smartwatch</option></select>
                     </div>
-                    <div class="col-12">
-                        <label class="fw-bold text-secondary">BOM File (Excel)</label>
-                        <input type="file" class="form-control" id="bomFile">
-                    </div>
-                    <div class="col-12 text-center mt-3">
-                        <button class="btn btn-primary btn-lg px-5 rounded-pill shadow" onclick="uploadBOM()">🚀 Upload BOM to Cloud</button>
-                    </div>
+                    <div class="col-12"><label class="fw-bold text-secondary">BOM File (Excel)</label><input type="file" class="form-control" id="bomFile"></div>
+                    <div class="col-12 text-center mt-3"><button class="btn btn-primary btn-lg px-5 rounded-pill shadow" onclick="uploadBOM()">🚀 Upload BOM to Cloud</button></div>
                 </div>
             </div>
             <div id="bomMsg" class="mt-3 text-center fw-bold"></div>
@@ -145,24 +87,10 @@
                         <div id="sapPreviewBox" style="display:none; background:#fff3cd; padding:20px; border-radius:10px; border:1px solid #ffeeba;">
                             <h6 class="text-dark fw-bold">⚠️ Map Columns Manually</h6>
                             <div class="row g-2 mb-3">
-                                <div class="col-md-3">
-                                    <label class="small fw-bold">Part Code</label>
-                                    <select id="sapColPart" class="form-select bg-white"></select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="small fw-bold">Unrestricted Qty</label>
-                                    <select id="sapColStock" class="form-select bg-white"></select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="small fw-bold">Storage Location</label>
-                                    <select id="sapColLine" class="form-select bg-white"></select>
-                                </div>
-                                <div class="col-md-3 d-flex align-items-end">
-                                    <button class="btn btn-warning w-100 fw-bold shadow-sm" onclick="confirmSAPUpload()">Confirm Mapping</button>
-                                </div>
-                            </div>
-                            <div class="table-responsive bg-white border" style="max-height:150px;">
-                                <table class="table table-sm table-bordered mb-0" id="sapPreviewTable" style="font-size:12px;"></table>
+                                <div class="col-md-3"><label class="small fw-bold">Part Code</label><select id="sapColPart" class="form-select bg-white"></select></div>
+                                <div class="col-md-3"><label class="small fw-bold">Unrestricted Qty</label><select id="sapColStock" class="form-select bg-white"></select></div>
+                                <div class="col-md-3"><label class="small fw-bold">Storage Location</label><select id="sapColLine" class="form-select bg-white"></select></div>
+                                <div class="col-md-3 d-flex align-items-end"><button class="btn btn-warning w-100 fw-bold shadow-sm" onclick="confirmSAPUpload()">Confirm Mapping</button></div>
                             </div>
                         </div>
                     </div>
@@ -175,57 +103,22 @@
             <div class="queue-box mb-4">
                 <h5 class="fw-bold text-success mb-3">➕ Add Job to Plan</h5>
                 <div class="row g-3 align-items-end">
-                    <div class="col-md-2">
-                        <label class="fw-bold small">Product Type</label>
-                        <select class="form-select form-select-sm" id="planProduct" onchange="updateLines()">
-                            <option value="">Select</option>
-                            <option value="Earbuds">Earbuds</option>
-                            <option value="Charging Case">Charging Case</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="fw-bold small">Line (Loc)</label>
-                        <select class="form-select form-select-sm" id="planLine"><option value="">-</option></select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="fw-bold small">Model</label>
-                        <input class="form-control form-control-sm" list="modelListOptions" id="planModel" placeholder="Search..." onchange="updateColors('plan')">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="fw-bold small">Color</label>
-                        <select class="form-select form-select-sm" id="planColor"><option value="">-</option></select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="fw-bold small">WIP Qty</label>
-                        <div class="input-group input-group-sm">
-                            <input type="number" class="form-control" id="planQty" placeholder="0">
-                            <button class="btn btn-success fw-bold" onclick="addToQueue()">ADD</button>
-                        </div>
-                    </div>
+                    <div class="col-md-2"><label class="fw-bold small">Product Type</label><select class="form-select form-select-sm" id="planProduct" onchange="updateLines()"><option value="">Select</option><option value="Earbuds">Earbuds</option><option value="Charging Case">Charging Case</option></select></div>
+                    <div class="col-md-2"><label class="fw-bold small">Line (Loc)</label><select class="form-select form-select-sm" id="planLine"><option value="">-</option></select></div>
+                    <div class="col-md-3"><label class="fw-bold small">Model</label><input class="form-control form-control-sm" list="modelListOptions" id="planModel" placeholder="Search..." onchange="updateColors('plan')"></div>
+                    <div class="col-md-3"><label class="fw-bold small">Color</label><select class="form-select form-select-sm" id="planColor"><option value="">-</option></select></div>
+                    <div class="col-md-2"><label class="fw-bold small">WIP Qty</label><div class="input-group input-group-sm"><input type="number" class="form-control" id="planQty" placeholder="0"><button class="btn btn-success fw-bold" onclick="addToQueue()">ADD</button></div></div>
                 </div>
             </div>
 
             <div class="mb-3">
-                <table class="table table-sm table-bordered text-center" id="queueTable">
-                    <thead class="table-light">
-                        <tr><th>Line</th><th>Model</th><th>Color</th><th>Qty</th><th>Action</th></tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-                <button class="btn btn-dark w-100 py-2 fw-bold shadow-sm" onclick="calculateTotalShortage()">
-                    📊 Generate Consolidated Report
-                </button>
+                <table class="table table-sm table-bordered text-center" id="queueTable"><thead class="table-light"><tr><th>Line</th><th>Model</th><th>Color</th><th>Qty</th><th>Action</th></tr></thead><tbody></tbody></table>
+                <button class="btn btn-dark w-100 py-2 fw-bold shadow-sm" onclick="calculateTotalShortage()">📊 Generate Consolidated Report</button>
             </div>
 
             <div class="table-responsive bg-white">
-                <div class="d-flex justify-content-between align-items-center bg-secondary text-white p-2">
-                    <h6 class="m-0">Shortage Report</h6>
-                    <button class="btn btn-light btn-sm fw-bold" onclick="downloadExcel()">📥 Download Excel</button>
-                </div>
-                <table class="table table-bordered table-hover mt-0" id="resTable">
-                    <thead><!-- Dynamically generated --></thead>
-                    <tbody></tbody>
-                </table>
+                <div class="d-flex justify-content-between align-items-center bg-secondary text-white p-2"><h6 class="m-0">Shortage Report (Line Breakup)</h6><button class="btn btn-light btn-sm fw-bold" onclick="downloadExcel()">📥 Download Excel</button></div>
+                <table class="table table-bordered table-hover mt-0" id="resTable"><thead></thead><tbody></tbody></table>
             </div>
         </div>
     </div>
@@ -242,13 +135,11 @@
     };
 
     let sapData = {};    
-    let sapRawData = [];
     let productionQueue = []; 
     let finalResults = [];
 
-    function cleanKey(val) { return String(val).replace(/[\s\u00A0]+/g, "").toUpperCase().trim(); }
+    function cleanKey(val) { return String(val || "").replace(/[\s\u00A0]+/g, "").toUpperCase().trim(); }
 
-    // MODEL LIST DATA
     const rawModelList = ["Ad131|Black", "Ad131|Captain'sBlue", "Ad131|CherryBlossom", "Ad131|CrimsonCream", "Ad131|Iron'sBlood", "Ad131|White", "Ad131|King'sBlack", "Ad131|Blue", "Ad131|Green", "Ad138|Black", "Ad138|IvoryWhite", "Ad138|Blue", "Ad138|Green", "Ad141|Black", "Ad141|Cyancider", "Ad141|White", "Ad148|Black", "Ad148|Cyancider", "Ad148|White", "Ad161|Coolsapphire", "Ad161|White", "Ad161|Black", "Ad131|KinghtBlack", "Ad131|KryptonBlue", "Ad131 Pro|Black", "Ad131 Pro|MintBubblegum", "Ad131 Pro|MintCascade", "Ad131 Pro|Blue", "Ad121 Pro|Black", "Ad121 Pro|MintCascade", "Ad121 Pro|Blue", "Ad121 Pro|Mint BubbleGum", "AD181|CoolGrey", "AD181|BoldBlue", "AD181|SpiritWhite", "AD181|CarbonBlack", "IMT121|Black", "IMT131|Black", "Ad190|Black", "Ad190|White", "Ad 192|Black", "Ad 192|White", "IMT121|White", "Atom81|OpalBlack", "Atom81|AeroBlue", "Atom81|PearlWhite", "AD183|Black", "AD183|White", "AD183|Grey", "AD100|Blue", "AD100|Black", "AD100|Green", "AD163|Blue", "AD163|White", "AD163|Black", "Ad138 Pro|Black", "Ad138 Pro|Blue", "Ad138 Pro|MintCascade", "IMT131|White", "AD191 G|Blue", "AD191 G|White", "AD191 G|Red", "Atom 83|Black", "Nirvana|White", "Nirvana|Black", "Nirvana ION N Mold|Black", "Ad170|Blue", "Ad170|Black", "Ad170|White", "Atom 83|White", "Atom 83|Blue", "Alpha|JetBlack", "Alpha|DarkCyan", "Alpha|SwedishWhite", "Alpha|AssassinBlack", "Alpha|Pine Green", "Alpha|Deep Blue", "Alpha|Peach Dusk", "IMT161|Black", "IMT161|White", "IMT128|Black", "IMT128|White", "IMT101|Black", "IMT101|White", "Ad125|Black", "Ad125|Blue", "Ad125|White", "Airdopes 207|CarbonBlack", "Airdopes 207|IvoryWhite", "Airdopes 207|Bold Blue", "AD Kick|CarbonBlack", "AD Kick|White", "AD Kick|Bold Blue", "Max|Black", "Max|White", "Max|Blue", "AD Hype|OpalBlack", "AD Hype|AeroBlue", "AD Hype|PearlWhite", "Zing|Black", "Zing|Blue", "Zing|White", "Ad161|OliveGreen", "Ad141|Green", "IMT181|BlackSabre", "IMT181|White", "Joy|JetBlack", "Joy|DarkCyan", "Joy|SwedishWhite", "Ace|Black", "Ace|Blue", "Ace|Green", "Ad161|AssassinRed", "Ad161|ElectricBlue", "Ad161|GreenFury", "Ad161|ThunderBlue", "IMT 100|Black", "IMT 100|White", "Nirvana Ion (ANC)|Black", "Nirvana Ion (ANC)|White", "IMT121|Spider-Man", "IMT121|Greengiant", "Ad 118|Black", "Ad 118|Blue", "Ad 118|Green", "AD161 Pro-Buds|SleekBlack", "AD161 Pro-Buds|Blue", "AD161 Pro-Buds|GreenCyan", "Nirvana Ion (ANC)|RoseQuartz", "Nirvana Ion (ANC)|BlazingComet", "Nirvana Ion (ANC)|NorthernLights", "AD Supreme|Black", "AD Supreme|White", "AD Supreme|Blue", "AD Supreme|SageGreen", "AD Supreme|MetallicGrey", "AD Supreme|SereneGreen", "AD 71|ActiveBlack", "AD 71|StarryBlue", "AD 71|FrostWhite", "AD 71|Aqua Blue", "AD 71|Maroon Lush", "AD 71|Grey", "R 195 Pro|FieryBlack", "Ad138|CherryBlossom", "Ad 800|Black", "Ad 800|Blue", "Ultra Plus|Black", "Ultra Plus|SportyBlue", "Ultra Plus|OliveSlate", "Ultra Plus|Midnight Black", "Ad 91|MistGrey", "Ad 91|Black", "Ad 91|Blue", "Ad 800|Green", "Ad 300|GunmetalBlack", "Ad 300|ChromeWhite", "Ad 161 N|CarbonBlack", "Ad 161 N|AshGrey", "Ad 120|ActiveBlack", "Ad 120|DawnBlue", "Ad 120|IvoryWhite", "Ad 141 Anc|GunmetalBlack", "Ad 141 Anc|White", "Ad 141 Anc|Green", "Ad 141 Anc Elite|Black", "Ad 141 Anc Elite|White", "Ad 141 Anc Elite|Green", "Ad 141 Pro Buds|Obsidian Black", "Ad 141 Pro Buds|Surfer Silver", "Ad 141 Pro Buds|Galactic Purple", "Ad 141 Pro Buds|Martian Green", "Ad 311 Pro|ActiveBlack", "Ad 311 Pro|DuskBlue", "Ad 311 Pro|SpaceGrey", "Ad 311 Pro|LavenderRush", "Ad 161 Anc|Black", "Ad 161 Anc|Green", "Ad 161 Anc|White", "Ad 155|ActiveBlack", "Ad 155|IvoryWhite", "Ad 155|HotRouge", "Ad 155|ActiveTeal", "Ad 300|Purple", "Ad 800|White", "Atom 81 Pro|ObsidianNoir", "Atom 81 Pro|IvoryElegance", "Atom 81 Pro|SlateFusion", "Ad 121Pro Plus|Black", "Ad 121Pro Plus|Blue", "Ad 161 Anc Elite|Black", "Ad 161 Anc Elite|White", "Ad 161 Anc Elite|Blue", "Nirvana Ion ANC Pro|RoseQuartz", "Nirvana Ion ANC Pro|BlazingComet", "Nirvana Ion ANC Pro|NorthernLights", "Nirvana Ion ANC Pro|Crystal Black", "Nirvana Ion ANC Pro|Quartz White", "Ad Nirvana Crystal|Quantum Black", "Ad Nirvana Crystal|Blazing Red", "Ad Nirvana Crystal|Yellow Pop", "Ad Nirvana Crystal|White Lustre", "Ad 800 Hidef|Graphite Grey", "Ad 800 Hidef|Sterling Silver", "Ad 800 Hidef|Azure Blue", "Ad 800 Hidef|Emerald Green", "Ad 131 Pro Buds|Active Black", "Ad 131 Pro Buds|Slate Blue", "Ad 131 Pro Buds|Coco Brown", "Ad 301|Sunset Blush", "Ad 301|Arctic Whisper", "Ad 301|Midnight Shadow", "Ad 301|Velvet Rouge", "Ad 131 Elite Anc|Active Black", "Ad 131 Elite Anc|Active White", "Ad 131 Elite Anc|Dawn Blue", "Ad 131 Elite Anc|ActiveTeal", "Ad Primo|Black", "Ad 181 Pro|Lilac Serenity", "Ad 181 Pro|Frosted Mint", "Ad 181 Pro|Coral Bloom", "Ad 181 Pro|Mocha Elegance", "Ad 191 Anc|Pellucid White", "Ad 191 Anc|Pellucid Orange", "Ad 191 Anc|Pellucid Green", "Ad 191 Anc|Pellucid Red", "Ad 191 Anc|Pellucid Blue", "Ad 280 Anc|Active Black", "Ad 280 Anc|Mint Blue", "Ad Unity ANC|Grey", "Ad Unity ANC|Black", "Ad Nirvana Iris|Black", "Ad Nirvana Iris|White", "Ad Nirvana X|Galactic Red", "Ad Nirvana X|Smoky Amethyst", "Ad Nirvana X|Mist Blue", "Ad Nirvana X|Cosmic Onyx", "Ad 91 Prime|Midnight Black", "Ad 91 Prime|Sonic Silver", "Ad 111v2|White", "Ad 111v2|Black", "Ad 280 Anc|Green", "Ad Ultra Pro|Zinc White", "Ad Ultra Pro|Gunmetal Black", "Ad Plus 311|Ash Grey", "Ad Plus 311|Charcoal Black", "Ad Plus 311|Crimsom Red", "Ad Plus 311|Midnight Blue", "Ad Plus 318|Active Black", "Ad Plus 318|StarryBlue", "Ad 213|Berry Blue", "Ad 213|Sandstone", "Ad 213|Shadow Black", "Ad 141 Gen 2|Active White", "Ad 141 Gen 2|Grey", "Ad 141 Gen 2|Active Black", "Ad 141 Gen 2|Orange", "Ad 141 Gen 2|Teal", "Ad 148 Gen 2|Active White", "Ad 148 Gen 2|Grey", "Ad 148 Gen 2|Orange", "Ad 148 Gen 2|Teal", "Ad 148 Gen 2|Active Black", "Ad 212|Ivory", "Ad 212|Noir Black", "Ad 212|Peach Blush", "Ad Prime 412|Lunar White", "Ad Prime 412|Midnight Black", "Ad Prime 412|Sahara Chic", "Ad 131 Gen 2|CarbonBlack", "Ad 131 Gen 2|Cream White", "Ad 131 Gen 2|Ice Blue", "Ad 313|CarbonBlack", "Ad 313|Gold Mist", "Ad 313|Jade Green", "HMD P60|Black", "HMD P60|White", "HMD P60|Green", "Ad Alpha Gen 2|Midnight Black", "Ad Alpha Gen 2|Slate Grey", "Ad Alpha Gen 2|Ocean Blue", "Ad Ace Gen 2|Shadow Black", "Ad Ace Gen 2|Moon White", "Ad Ace Gen 2|Mystic Blue", "HMD S60|Grey", "HMD S60|Purple", "HMD P50|Black", "HMD P50|White", "HMD P50|Blue", "HMD X50|Black", "HMD X50|White", "HMD X50 Pro|Silver", "HMD X50 Pro|Blue", "HMD P70|Black", "HMD P70|White", "Amazon basics|Black", "Ad Prime 513 Anc|Carbon Black", "Ad Prime 513 Anc|Ivory Glow", "Ad Pulse|Shadow Black", "Ad 138 Gen 2|CarbonBlack", "Ad 138 Gen 2|Cream White", "Ad 701 Anc|Blue", "Ad 701 Anc|Grey", "Dashcam Hive E1|Black", "Dashcam Hive E1|Blue"];
     
     const modelMap = {};
@@ -259,61 +150,40 @@
         if (color && !modelMap[model].includes(color)) modelMap[model].push(color);
     });
 
-    window.onload = function() {
-        populateDatalist();
-        document.getElementById('upModel').addEventListener('input', validateModelInput);
-        fetchUploadedList();
-    };
+    window.onload = function() { populateDatalist(); document.getElementById('upModel').addEventListener('input', validateModelInput); fetchUploadedList(); };
 
-    function populateDatalist() {
-        const list = document.getElementById('modelListOptions');
-        validModelNames.sort().forEach(m => list.appendChild(new Option(m, m)));
-    }
+    function populateDatalist() { const list = document.getElementById('modelListOptions'); validModelNames.sort().forEach(m => list.appendChild(new Option(m, m))); }
 
     function validateModelInput() {
-        const input = document.getElementById('upModel');
-        const errorMsg = document.getElementById('modelError');
-        if(input.value && !validModelNames.includes(input.value)) {
-            input.classList.add('is-invalid'); errorMsg.style.display = 'block'; updateColors('up', false);
-        } else {
-            input.classList.remove('is-invalid'); errorMsg.style.display = 'none'; if(input.value) updateColors('up', true);
-        }
+        const input = document.getElementById('upModel'); const errorMsg = document.getElementById('modelError');
+        if(input.value && !validModelNames.includes(input.value)) { input.classList.add('is-invalid'); errorMsg.style.display = 'block'; updateColors('up', false); }
+        else { input.classList.remove('is-invalid'); errorMsg.style.display = 'none'; if(input.value) updateColors('up', true); }
     }
 
     function updateColors(prefix, isValid) {
-        if(!isValid && prefix === 'up') return;
-        const val = document.getElementById(prefix + 'Model').value;
-        const sel = document.getElementById(prefix + 'Color');
-        sel.innerHTML = '<option value="">Select</option>';
-        if (modelMap[val]) modelMap[val].forEach(c => sel.add(new Option(c, c)));
+        if(!isValid && prefix === 'up') return; const val = document.getElementById(prefix + 'Model').value; const sel = document.getElementById(prefix + 'Color');
+        sel.innerHTML = '<option value="">Select</option>'; if (modelMap[val]) modelMap[val].forEach(c => sel.add(new Option(c, c)));
     }
 
     function updateLines() {
-        const type = document.getElementById('planProduct').value;
-        const lineSel = document.getElementById('planLine');
-        lineSel.innerHTML = '<option value="">Select Line</option>';
-        if(lineData[type]) lineData[type].forEach(line => lineSel.add(new Option(line, line)));
+        const type = document.getElementById('planProduct').value; const lineSel = document.getElementById('planLine');
+        lineSel.innerHTML = '<option value="">Select Line</option>'; if(lineData[type]) lineData[type].forEach(line => lineSel.add(new Option(line, line)));
     }
 
     function fetchUploadedList() {
         fetch(`${SCRIPT_URL}?action=list`).then(res => res.json()).then(data => {
-            let html = '';
-            data.forEach(name => html += `<a href="#" class="list-group-item list-group-item-action py-2">✅ ${name}</a>`);
+            let html = ''; data.forEach(name => html += `<a href="#" class="list-group-item list-group-item-action py-2">✅ ${name}</a>`);
             document.getElementById('uploadedList').innerHTML = html || '<div class="text-muted text-center">No BOMs uploaded yet.</div>';
         });
     }
 
     function uploadBOM() {
-        const model = document.getElementById('upModel').value;
-        const color = document.getElementById('upColor').value;
-        const fileInput = document.getElementById('bomFile');
-        if(!validModelNames.includes(model)) return alert("Invalid Model");
-        if(!color || !fileInput.files[0]) return alert("All fields required");
+        const model = document.getElementById('upModel').value, color = document.getElementById('upColor').value, fileInput = document.getElementById('bomFile');
+        if(!validModelNames.includes(model)) return alert("Invalid Model"); if(!color || !fileInput.files[0]) return alert("All fields required");
         document.getElementById('loader').style.display = 'flex';
         const reader = new FileReader();
         reader.onload = e => {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, {type: 'array'});
+            const data = new Uint8Array(e.target.result); const workbook = XLSX.read(data, {type: 'array'});
             const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1});
             sendToCloud({ type: 'bom', model, color, rows: jsonData }, 'bomMsg');
         };
@@ -324,12 +194,9 @@
         if(!input.files[0]) return;
         const reader = new FileReader();
         reader.onload = e => {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, {type: 'array'});
+            const data = new Uint8Array(e.target.result); const workbook = XLSX.read(data, {type: 'array'});
             sapRawData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1});
             document.getElementById('sapPreviewBox').style.display = 'block';
-            const table = document.getElementById('sapPreviewTable');
-            table.innerHTML = '';
             const colSelects = [document.getElementById('sapColPart'), document.getElementById('sapColStock'), document.getElementById('sapColLine')];
             colSelects.forEach(sel => sel.innerHTML = '<option value="-1">Select...</option>');
             sapRawData[0].forEach((cell, idx) => colSelects.forEach(sel => sel.add(new Option(`Col ${idx+1}: ${cell}`, idx))));
@@ -338,45 +205,33 @@
     }
 
     function confirmSAPUpload() {
-        const cIdx = parseInt(document.getElementById('sapColPart').value);
-        const sIdx = parseInt(document.getElementById('sapColStock').value);
-        const lIdx = parseInt(document.getElementById('sapColLine').value);
+        const cIdx = parseInt(document.getElementById('sapColPart').value), sIdx = parseInt(document.getElementById('sapColStock').value), lIdx = parseInt(document.getElementById('sapColLine').value);
         if(cIdx === -1 || sIdx === -1 || lIdx === -1) return alert("Map all columns!");
         sapData = {}; 
         for(let i=1; i < sapRawData.length; i++) {
             let r = sapRawData[i];
-            if(r[cIdx]) {
-                let pK = cleanKey(r[cIdx]), lK = cleanKey(r[lIdx]), v = parseFloat(r[sIdx]) || 0;
-                if(!sapData[pK]) sapData[pK] = {};
-                sapData[pK][lK] = (sapData[pK][lK] || 0) + v;
-            }
+            if(r[cIdx]) { let pK = cleanKey(r[cIdx]), lK = cleanKey(r[lIdx]), v = parseFloat(r[sIdx]) || 0; if(!sapData[pK]) sapData[pK] = {}; sapData[pK][lK] = (sapData[pK][lK] || 0) + v; }
         }
-        document.getElementById('sapPreviewBox').style.display = 'none';
-        sendToCloud({ type: 'sap', rows: sapRawData }, 'sapMsg');
+        document.getElementById('sapPreviewBox').style.display = 'none'; sendToCloud({ type: 'sap', rows: sapRawData }, 'sapMsg');
     }
 
     function addToQueue() {
-        const line = document.getElementById('planLine').value, model = document.getElementById('planModel').value, 
-              color = document.getElementById('planColor').value, qty = parseFloat(document.getElementById('planQty').value);
-        if(!line || !model || !color || !qty) return alert("Fill all fields");
-        productionQueue.push({line, model, color, qty});
-        renderQueue();
+        const line = document.getElementById('planLine').value, model = document.getElementById('planModel').value, color = document.getElementById('planColor').value, qty = parseFloat(document.getElementById('planQty').value);
+        if(!line || !model || !color || !qty) return alert("Fill all fields"); productionQueue.push({line, model, color, qty}); renderQueue();
     }
 
     function renderQueue() {
-        const tbody = document.querySelector('#queueTable tbody');
-        tbody.innerHTML = '';
-        productionQueue.forEach((item, index) => {
-            tbody.innerHTML += `<tr><td>${item.line}</td><td>${item.model}</td><td>${item.color}</td><td>${item.qty}</td><td><button class="btn btn-danger btn-sm py-0" onclick="productionQueue.splice(${index},1);renderQueue()">❌</button></td></tr>`;
-        });
+        const tbody = document.querySelector('#queueTable tbody'); tbody.innerHTML = '';
+        productionQueue.forEach((item, index) => { tbody.innerHTML += `<tr><td>${item.line}</td><td>${item.model}</td><td>${item.color}</td><td>${item.qty}</td><td><button class="btn btn-danger btn-sm py-0" onclick="productionQueue.splice(${index},1);renderQueue()">❌</button></td></tr>`; });
     }
 
+    // --- MAIN CALCULATION LOGIC ---
     async function calculateTotalShortage() {
         if(productionQueue.length === 0 || Object.keys(sapData).length === 0) return alert("Queue/SAP data missing");
         document.getElementById('loader').style.display = 'flex';
         
         let activeLines = [...new Set(productionQueue.map(j => j.line))].sort();
-        let aggregatedParts = {};
+        let aggregatedParts = {}; 
 
         for(let job of productionQueue) {
             const sName = `${job.model.replace(/[\/\\?%*:|"<>]/g, "")} - ${job.color.replace(/[\/\\?%*:|"<>]/g, "")}`;
@@ -384,83 +239,90 @@
                 const res = await fetch(`${SCRIPT_URL}?action=getBOM&sheetName=${encodeURIComponent(sName)}`);
                 const bomData = await res.json();
                 if(!bomData) continue;
-                let cols = { partCode: 2, qpa: 5, desc: 3, prio: 8, group: 0 };
-                // Simple auto header detect
-                for(let i=0; i < Math.min(10, bomData.length); i++){
-                    let r = bomData[i].map(x => String(x).toLowerCase());
-                    if(r.includes("component") || r.includes("item code")){
-                        cols.partCode = r.findIndex(c => c.includes("component") || c.includes("item code"));
-                        cols.qpa = r.findIndex(c => c === "qpa" || c.includes("qty"));
-                        cols.prio = r.findIndex(c => c.includes("priority"));
-                        cols.desc = r.findIndex(c => c.includes("desc"));
-                        cols.group = r.findIndex(c => c.includes("group"));
+                
+                let cols = { partCode: -1, qpa: -1, desc: -1, prio: -1, group: -1, alternate: -1, srNum: -1 };
+                let dataStartIdx = 0;
+
+                // Find Header Row and Map Columns
+                for(let i=0; i < Math.min(20, bomData.length); i++){
+                    let r = bomData[i].map(x => String(x || "").toLowerCase().trim());
+                    if(r.some(c => c.includes("component") || c.includes("item code") || c.includes("compo"))){
+                        cols.partCode = r.findIndex(c => c.includes("component") || c.includes("item code") || c.includes("compo"));
+                        cols.qpa = r.findIndex(c => c === "qpa" || c.includes("qty") || c.includes("req"));
+                        cols.prio = r.findIndex(c => c.includes("priority") || c.includes("prio"));
+                        cols.desc = r.findIndex(c => c.includes("description") || c.includes("item de") || c.includes("desc"));
+                        cols.group = r.findIndex(c => (c.includes("group") || c === "gr") && !c.includes("sr."));
+                        cols.alternate = r.findIndex(c => c.includes("alternate") || c.includes("alt"));
+                        cols.srNum = r.findIndex(c => c.includes("sr. num") || c.includes("sr. no") || c.includes("s.no"));
+                        dataStartIdx = i + 1;
                         break;
                     }
                 }
-                for(let i=0; i<bomData.length; i++) {
+
+                // If not found, use default indices
+                if(cols.partCode === -1) { cols = { srNum: 0, partCode: 2, desc: 3, group: 4, qpa: 5, prio: 8 }; dataStartIdx = 1; }
+
+                for(let i = dataStartIdx; i < bomData.length; i++) {
                     let r = bomData[i];
                     if(r[cols.partCode]) {
                         let pK = cleanKey(r[cols.partCode]);
-                        let q = parseFloat(r[cols.qpa]) || 0, p = parseInt(r[cols.prio]) || 0, g = (cols.group > -1)?String(r[cols.group]||""): "";
-                        if(!aggregatedParts[pK]) aggregatedParts[pK] = { req: 0, groups: new Set(), d: { o: r[cols.partCode], desc: r[cols.desc]||"", q, p } };
+                        if(pK === "COMPONENT/ITEMCODE") continue; // Skip redundant header row if detected as data
+
+                        let q = parseFloat(r[cols.qpa]) || 0, p = parseInt(r[cols.prio]) || 0;
+                        let g = (cols.group > -1) ? String(r[cols.group] || "").trim() : "";
+                        let alt = (cols.alternate > -1) ? String(r[cols.alternate] || "").trim() : "";
+                        let bomSr = (cols.srNum > -1) ? String(r[cols.srNum] || "").trim() : "";
+                        
+                        if(!aggregatedParts[pK]) { aggregatedParts[pK] = { req: 0, groups: new Set(), alternates: new Set(), d: { o: r[cols.partCode], desc: r[cols.desc]||"", q, p, bomSr } }; }
                         if(g) aggregatedParts[pK].groups.add(g);
+                        if(alt) aggregatedParts[pK].alternates.add(alt);
                         if(p === 0 || p === 1) aggregatedParts[pK].req += (q * job.qty);
                     }
                 }
             } catch(e) {}
         }
 
-        // Generate Header
-        let h = `<tr><th>Prio</th><th>Group</th><th>Part Code</th><th>Description</th><th>QPA</th><th>Required</th>`;
+        // Generate dynamic table header
+        let h = `<tr><th>Sr.</th><th>Prio</th><th>Group</th><th>Alternate</th><th>Part Code</th><th>Description</th><th>QPA</th><th>Required</th>`;
         activeLines.forEach(l => h += `<th>${l}</th>`);
         h += `<th>Total SAP Stock</th><th>Diff</th></tr>`;
         document.querySelector('#resTable thead').innerHTML = h;
 
-        const tbody = document.querySelector('#resTable tbody');
-        tbody.innerHTML = '';
+        const tbody = document.querySelector('#resTable tbody'); tbody.innerHTML = '';
         finalResults = [];
 
-        Object.keys(aggregatedParts).forEach(key => {
+        Object.keys(aggregatedParts).forEach((key) => {
             let item = aggregatedParts[key], lineSum = 0, globalSum = 0;
-            let rowObj = { "Prio": item.d.p, "Group": Array.from(item.groups).join(","), "Part": item.d.o, "Desc": item.d.desc, "QPA": item.d.q, "Req": item.req.toFixed(1) };
+            let groupStr = Array.from(item.groups).sort().join(", ");
+            let altStr = Array.from(item.alternates).sort().join(", ");
+
+            let rowObj = { "Sr.": item.d.bomSr || "-", "Prio": item.d.p, "Group": groupStr, "Alternate": altStr, "Part": item.d.o, "Desc": item.d.desc, "QPA": item.d.q, "Req": item.req.toFixed(1) };
             
             let lineStockHtml = '';
             activeLines.forEach(l => {
                 let s = (sapData[key] && sapData[key][l]) ? sapData[key][l] : 0;
-                lineSum += s;
-                lineStockHtml += `<td>${s.toFixed(1)}</td>`;
-                rowObj[l] = s.toFixed(1);
+                lineSum += s; lineStockHtml += `<td>${s.toFixed(1)}</td>`; rowObj[l] = s.toFixed(1);
             });
 
             if(sapData[key]) Object.values(sapData[key]).forEach(v => globalSum += v);
-            let diff = lineSum - item.req;
-            let isR = (item.d.p === 0 || item.d.p === 1);
-            
-            rowObj["Total Stock"] = globalSum.toFixed(1);
-            rowObj["Diff"] = diff.toFixed(1);
+            let diff = lineSum - item.req, isR = (item.d.p === 0 || item.d.p === 1);
+            rowObj["Total SAP Stock"] = globalSum.toFixed(1); rowObj["Diff"] = diff.toFixed(1);
             finalResults.push(rowObj);
 
             tbody.innerHTML += `<tr class="${isR?'row-running':'row-alternate'}">
-                <td>${item.d.p}</td><td>${rowObj.Group}</td><td>${item.d.o}</td><td>${item.d.desc}</td><td>${item.d.q}</td><td>${rowObj.Req}</td>
+                <td>${rowObj["Sr."]}</td><td>${item.d.p}</td><td>${groupStr}</td><td>${altStr}</td><td>${item.d.o}</td><td>${item.d.desc}</td><td>${item.d.q}</td><td>${rowObj.Req}</td>
                 ${lineStockHtml}<td>${globalSum.toFixed(1)}</td><td class="${diff<0?'val-negative':(isR?'val-positive':'')}">${diff.toFixed(1)}</td>
             </tr>`;
         });
         document.getElementById('loader').style.display = 'none';
     }
 
-    function sendToCloud(payload, msgId) {
-        fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) })
-        .then(() => { 
-            document.getElementById('loader').style.display = 'none';
-            document.getElementById(msgId).innerHTML = '<div class="alert alert-success">✅ Done!</div>';
-        });
-    }
+    function sendToCloud(payload, msgId) { fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).then(() => { document.getElementById('loader').style.display = 'none'; document.getElementById(msgId).innerHTML = '<div class="alert alert-success">✅ Done!</div>'; }); }
 
     function downloadExcel() {
         if(!finalResults.length) return alert("Generate report first");
         const ws = XLSX.utils.json_to_sheet(finalResults), wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Report");
-        XLSX.writeFile(wb, "Production_Plan_Breakup.xlsx");
+        XLSX.utils.book_append_sheet(wb, ws, "Shortage_Report"); XLSX.writeFile(wb, "Production_Plan_Detailed.xlsx");
     }
 </script>
 </body>
