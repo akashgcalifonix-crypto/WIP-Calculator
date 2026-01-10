@@ -49,9 +49,42 @@
     </ul>
 
     <div class="tab-content">
+        <!-- DASHBOARD WITH FILTERS AND SEARCH -->
         <div class="tab-pane fade" id="tab0">
-            <h5 class="text-primary mb-3">Uploaded Models (Cloud Database)</h5>
-            <div class="list-group shadow-sm" id="uploadedList"><div class="text-center p-4">Loading list...</div></div>
+            <div class="row g-2 mb-3 align-items-center bg-light p-3 rounded shadow-sm">
+                <div class="col-md-5">
+                    <label class="small fw-bold text-secondary">Search Model / Color</label>
+                    <input type="text" id="dashSearch" class="form-control" placeholder="Type here to search..." onkeyup="filterDashboard()">
+                </div>
+                <div class="col-md-4">
+                    <label class="small fw-bold text-secondary">Filter by Product Type</label>
+                    <select id="dashTypeFilter" class="form-select" onchange="filterDashboard()">
+                        <option value="">All Products</option>
+                        <option value="Earbuds">Earbuds</option>
+                        <option value="Charging Case">Charging Case</option>
+                        <option value="Smartwatch">Smartwatch</option>
+                    </select>
+                </div>
+                <div class="col-md-3 text-end pt-3">
+                    <span class="badge bg-primary px-3 py-2" id="dashCounter">Total: 0 BOMs</span>
+                </div>
+            </div>
+            
+            <div class="table-responsive bg-white shadow-sm border rounded">
+                <table class="table table-hover table-striped mb-0" id="dashboardTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Product Type</th>
+                            <th>Model Name</th>
+                            <th>Color</th>
+                            <th class="text-center">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dashBody">
+                        <tr><td colspan="4" class="text-center p-5 text-muted">Loading cloud database...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
         
         <div class="tab-pane fade show active" id="tab1">
@@ -141,6 +174,7 @@
     let sapData = {};    
     let productionQueue = []; 
     let finalResults = [];
+    let cloudBOMList = []; // Dashboard global storage
 
     function cleanKey(val) { return String(val || "").replace(/[\s\u00A0]+/g, "").toUpperCase().trim(); }
 
@@ -169,13 +203,59 @@
         const type = document.getElementById('planProduct').value; const lineSel = document.getElementById('planLine');
         lineSel.innerHTML = '<option value="">Select Line</option>'; if(lineData[type]) lineData[type].forEach(line => lineSel.add(new Option(line, line)));
     }
+
+    // --- DASHBOARD FUNCTIONS ---
     function fetchUploadedList() {
         fetch(`${SCRIPT_URL}?action=list`).then(res => res.json()).then(data => {
-            let html = ''; data.forEach(name => html += `<a href="#" class="list-group-item list-group-item-action py-2">✅ ${name}</a>`);
-            document.getElementById('uploadedList').innerHTML = html || '<div class="text-muted text-center">No BOMs uploaded yet.</div>';
+            // Data is like ["Earbuds - Ad 131 - Black", ...]
+            cloudBOMList = data.map(name => {
+                const parts = name.split(" - ");
+                return {
+                    fullName: name,
+                    product: parts[0] || "-",
+                    model: parts[1] || "-",
+                    color: parts[2] || "-"
+                };
+            });
+            renderDashboard(cloudBOMList);
         });
     }
 
+    function renderDashboard(data) {
+        const tbody = document.getElementById('dashBody');
+        const counter = document.getElementById('dashCounter');
+        tbody.innerHTML = '';
+        counter.innerText = `Total: ${data.length} BOMs`;
+
+        if(data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center p-4">No matching records found.</td></tr>';
+            return;
+        }
+
+        data.forEach(item => {
+            tbody.innerHTML += `
+                <tr>
+                    <td><span class="badge bg-light text-dark border">${item.product}</span></td>
+                    <td class="fw-bold text-primary">${item.model}</td>
+                    <td>${item.color}</td>
+                    <td class="text-center"><span class="text-success small fw-bold">● Active</span></td>
+                </tr>`;
+        });
+    }
+
+    function filterDashboard() {
+        const searchVal = document.getElementById('dashSearch').value.toLowerCase();
+        const typeVal = document.getElementById('dashTypeFilter').value;
+
+        const filtered = cloudBOMList.filter(item => {
+            const matchesSearch = item.model.toLowerCase().includes(searchVal) || item.color.toLowerCase().includes(searchVal);
+            const matchesType = typeVal === "" || item.product === typeVal;
+            return matchesSearch && matchesType;
+        });
+        renderDashboard(filtered);
+    }
+
+    // --- UPLOAD LOGIC ---
     function uploadBOM() {
         const model = document.getElementById('upModel').value, color = document.getElementById('upColor').value, product = document.getElementById('upProduct').value, fileInput = document.getElementById('bomFile');
         if(!validModelNames.includes(model)) return alert("Invalid Model"); if(!color || !fileInput.files[0]) return alert("All fields required");
@@ -184,7 +264,6 @@
         reader.onload = e => {
             const data = new Uint8Array(e.target.result); const workbook = XLSX.read(data, {type: 'array'});
             const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1});
-            // UNIQUE SHEET NAME IN GOOGLE SHEET
             const uniqueName = `${product} - ${model} - ${color}`;
             sendToCloud({ type: 'bom', model: uniqueName, color: '-', rows: jsonData }, 'bomMsg');
         };
@@ -218,8 +297,7 @@
 
     function addToQueue() {
         const product = document.getElementById('planProduct').value, line = document.getElementById('planLine').value, model = document.getElementById('planModel').value, color = document.getElementById('planColor').value, qty = parseFloat(document.getElementById('planQty').value);
-        if(!product || !line || !model || !color || !qty) return alert("Fill all fields"); 
-        productionQueue.push({product, line, model, color, qty}); renderQueue();
+        if(!product || !line || !model || !color || !qty) return alert("Fill all fields"); productionQueue.push({product, line, model, color, qty}); renderQueue();
     }
 
     function renderQueue() {
@@ -231,12 +309,10 @@
     async function calculateTotalShortage() {
         if(productionQueue.length === 0 || Object.keys(sapData).length === 0) return alert("Queue/SAP data missing");
         document.getElementById('loader').style.display = 'flex';
-        
         let activeLines = [...new Set(productionQueue.map(j => j.line))].sort();
         let aggregatedParts = {}; 
 
         for(let job of productionQueue) {
-            // MATCH THE UNIQUE SHEET NAME USED DURING UPLOAD
             const sName = `${job.product} - ${job.model} - ${job.color}`;
             try {
                 const res = await fetch(`${SCRIPT_URL}?action=getBOM&sheetName=${encodeURIComponent(sName)}`);
@@ -245,7 +321,6 @@
                 
                 let cols = { partCode: -1, qpa: -1, desc: -1, prio: -1, group: -1, alternate: -1, srNum: -1 };
                 let dataStartIdx = 0;
-
                 for(let i=0; i < Math.min(20, bomData.length); i++){
                     let r = bomData[i].map(x => String(x || "").toLowerCase().trim());
                     if(r.some(c => c.includes("component") || c.includes("item code") || c.includes("compo"))){
@@ -264,16 +339,13 @@
                 for(let i = dataStartIdx; i < bomData.length; i++) {
                     let r = bomData[i];
                     if(r[cols.partCode]) {
-                        let pK = cleanKey(r[cols.partCode]);
-                        if(pK === "COMPONENT/ITEMCODE" || pK === "ITEMCODE" || pK === "COMPONENT") continue;
+                        let pK = cleanKey(r[cols.partCode]); if(pK === "COMPONENT/ITEMCODE" || pK === "ITEMCODE" || pK === "COMPONENT") continue;
                         let q = parseFloat(r[cols.qpa]) || 0, p = parseInt(r[cols.prio]) || 0;
                         let g = (cols.group > -1) ? String(r[cols.group] || "").trim() : "";
                         let alt = (cols.alternate > -1) ? String(r[cols.alternate] || "").trim() : "";
                         let bomSr = (cols.srNum > -1) ? String(r[cols.srNum] || "").trim() : "";
-                        
                         if(!aggregatedParts[pK]) { aggregatedParts[pK] = { req: 0, groups: new Set(), alternates: new Set(), d: { o: r[cols.partCode], desc: r[cols.desc]||"", q, p, bomSr } }; }
-                        if(g) aggregatedParts[pK].groups.add(g);
-                        if(alt) aggregatedParts[pK].alternates.add(alt);
+                        if(g) aggregatedParts[pK].groups.add(g); if(alt) aggregatedParts[pK].alternates.add(alt);
                         if(p === 0 || p === 1) aggregatedParts[pK].req += (q * job.qty);
                     }
                 }
@@ -287,7 +359,6 @@
 
         const tbody = document.querySelector('#resTable tbody'); tbody.innerHTML = '';
         finalResults = [];
-
         Object.keys(aggregatedParts).forEach((key) => {
             let item = aggregatedParts[key], lineSum = 0, globalSum = 0;
             let rowObj = { "Sr.": item.d.bomSr || "-", "Prio": item.d.p, "Group": Array.from(item.groups).sort().join(", "), "Alternate": Array.from(item.alternates).sort().join(", "), "Part": item.d.o, "Desc": item.d.desc, "QPA": item.d.q, "Req": item.req.toFixed(1) };
@@ -304,7 +375,7 @@
         document.getElementById('loader').style.display = 'none';
     }
 
-    function sendToCloud(payload, msgId) { fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).then(() => { document.getElementById('loader').style.display = 'none'; document.getElementById(msgId).innerHTML = '<div class="alert alert-success">✅ Done!</div>'; }); }
+    function sendToCloud(payload, msgId) { fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).then(() => { document.getElementById('loader').style.display = 'none'; document.getElementById(msgId).innerHTML = '<div class="alert alert-success">✅ Done!</div>'; fetchUploadedList(); }); }
     function downloadExcel() { if(!finalResults.length) return alert("Generate report first"); const ws = XLSX.utils.json_to_sheet(finalResults), wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Shortage_Report"); XLSX.writeFile(wb, "Production_Plan_Detailed.xlsx"); }
 </script>
 </body>
