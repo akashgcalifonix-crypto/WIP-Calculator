@@ -69,7 +69,11 @@
                     </div>
                     <div class="col-md-4">
                         <label class="fw-bold text-secondary">Product Type</label>
-                        <select class="form-select" id="upProduct"><option>Earbuds</option><option>Charging Case</option><option>Smartwatch</option></select>
+                        <select class="form-select" id="upProduct">
+                            <option value="Earbuds">Earbuds</option>
+                            <option value="Charging Case">Charging Case</option>
+                            <option value="Smartwatch">Smartwatch</option>
+                        </select>
                     </div>
                     <div class="col-12"><label class="fw-bold text-secondary">BOM File (Excel)</label><input type="file" class="form-control" id="bomFile"></div>
                     <div class="col-12 text-center mt-3"><button class="btn btn-primary btn-lg px-5 rounded-pill shadow" onclick="uploadBOM()">🚀 Upload BOM to Cloud</button></div>
@@ -112,7 +116,7 @@
             </div>
 
             <div class="mb-3">
-                <table class="table table-sm table-bordered text-center" id="queueTable"><thead class="table-light"><tr><th>Line</th><th>Model</th><th>Color</th><th>Qty</th><th>Action</th></tr></thead><tbody></tbody></table>
+                <table class="table table-sm table-bordered text-center" id="queueTable"><thead class="table-light"><tr><th>Line</th><th>Product</th><th>Model</th><th>Color</th><th>Qty</th><th>Action</th></tr></thead><tbody></tbody></table>
                 <button class="btn btn-dark w-100 py-2 fw-bold shadow-sm" onclick="calculateTotalShortage()">📊 Generate Consolidated Report</button>
             </div>
 
@@ -151,25 +155,20 @@
     });
 
     window.onload = function() { populateDatalist(); document.getElementById('upModel').addEventListener('input', validateModelInput); fetchUploadedList(); };
-
     function populateDatalist() { const list = document.getElementById('modelListOptions'); validModelNames.sort().forEach(m => list.appendChild(new Option(m, m))); }
-
     function validateModelInput() {
         const input = document.getElementById('upModel'); const errorMsg = document.getElementById('modelError');
         if(input.value && !validModelNames.includes(input.value)) { input.classList.add('is-invalid'); errorMsg.style.display = 'block'; updateColors('up', false); }
         else { input.classList.remove('is-invalid'); errorMsg.style.display = 'none'; if(input.value) updateColors('up', true); }
     }
-
     function updateColors(prefix, isValid) {
         if(!isValid && prefix === 'up') return; const val = document.getElementById(prefix + 'Model').value; const sel = document.getElementById(prefix + 'Color');
         sel.innerHTML = '<option value="">Select</option>'; if (modelMap[val]) modelMap[val].forEach(c => sel.add(new Option(c, c)));
     }
-
     function updateLines() {
         const type = document.getElementById('planProduct').value; const lineSel = document.getElementById('planLine');
         lineSel.innerHTML = '<option value="">Select Line</option>'; if(lineData[type]) lineData[type].forEach(line => lineSel.add(new Option(line, line)));
     }
-
     function fetchUploadedList() {
         fetch(`${SCRIPT_URL}?action=list`).then(res => res.json()).then(data => {
             let html = ''; data.forEach(name => html += `<a href="#" class="list-group-item list-group-item-action py-2">✅ ${name}</a>`);
@@ -178,14 +177,16 @@
     }
 
     function uploadBOM() {
-        const model = document.getElementById('upModel').value, color = document.getElementById('upColor').value, fileInput = document.getElementById('bomFile');
+        const model = document.getElementById('upModel').value, color = document.getElementById('upColor').value, product = document.getElementById('upProduct').value, fileInput = document.getElementById('bomFile');
         if(!validModelNames.includes(model)) return alert("Invalid Model"); if(!color || !fileInput.files[0]) return alert("All fields required");
         document.getElementById('loader').style.display = 'flex';
         const reader = new FileReader();
         reader.onload = e => {
             const data = new Uint8Array(e.target.result); const workbook = XLSX.read(data, {type: 'array'});
             const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1});
-            sendToCloud({ type: 'bom', model, color, rows: jsonData }, 'bomMsg');
+            // UNIQUE SHEET NAME IN GOOGLE SHEET
+            const uniqueName = `${product} - ${model} - ${color}`;
+            sendToCloud({ type: 'bom', model: uniqueName, color: '-', rows: jsonData }, 'bomMsg');
         };
         reader.readAsArrayBuffer(fileInput.files[0]);
     }
@@ -216,16 +217,17 @@
     }
 
     function addToQueue() {
-        const line = document.getElementById('planLine').value, model = document.getElementById('planModel').value, color = document.getElementById('planColor').value, qty = parseFloat(document.getElementById('planQty').value);
-        if(!line || !model || !color || !qty) return alert("Fill all fields"); productionQueue.push({line, model, color, qty}); renderQueue();
+        const product = document.getElementById('planProduct').value, line = document.getElementById('planLine').value, model = document.getElementById('planModel').value, color = document.getElementById('planColor').value, qty = parseFloat(document.getElementById('planQty').value);
+        if(!product || !line || !model || !color || !qty) return alert("Fill all fields"); 
+        productionQueue.push({product, line, model, color, qty}); renderQueue();
     }
 
     function renderQueue() {
         const tbody = document.querySelector('#queueTable tbody'); tbody.innerHTML = '';
-        productionQueue.forEach((item, index) => { tbody.innerHTML += `<tr><td>${item.line}</td><td>${item.model}</td><td>${item.color}</td><td>${item.qty}</td><td><button class="btn btn-danger btn-sm py-0" onclick="productionQueue.splice(${index},1);renderQueue()">❌</button></td></tr>`; });
+        productionQueue.forEach((item, index) => { tbody.innerHTML += `<tr><td>${item.line}</td><td>${item.product}</td><td>${item.model}</td><td>${item.color}</td><td>${item.qty}</td><td><button class="btn btn-danger btn-sm py-0" onclick="productionQueue.splice(${index},1);renderQueue()">❌</button></td></tr>`; });
     }
 
-    // --- MAIN CALCULATION LOGIC ---
+    // --- CALCULATION LOGIC ---
     async function calculateTotalShortage() {
         if(productionQueue.length === 0 || Object.keys(sapData).length === 0) return alert("Queue/SAP data missing");
         document.getElementById('loader').style.display = 'flex';
@@ -234,7 +236,8 @@
         let aggregatedParts = {}; 
 
         for(let job of productionQueue) {
-            const sName = `${job.model.replace(/[\/\\?%*:|"<>]/g, "")} - ${job.color.replace(/[\/\\?%*:|"<>]/g, "")}`;
+            // MATCH THE UNIQUE SHEET NAME USED DURING UPLOAD
+            const sName = `${job.product} - ${job.model} - ${job.color}`;
             try {
                 const res = await fetch(`${SCRIPT_URL}?action=getBOM&sheetName=${encodeURIComponent(sName)}`);
                 const bomData = await res.json();
@@ -243,7 +246,6 @@
                 let cols = { partCode: -1, qpa: -1, desc: -1, prio: -1, group: -1, alternate: -1, srNum: -1 };
                 let dataStartIdx = 0;
 
-                // Find Header Row and Map Columns
                 for(let i=0; i < Math.min(20, bomData.length); i++){
                     let r = bomData[i].map(x => String(x || "").toLowerCase().trim());
                     if(r.some(c => c.includes("component") || c.includes("item code") || c.includes("compo"))){
@@ -254,20 +256,16 @@
                         cols.group = r.findIndex(c => (c.includes("group") || c === "gr") && !c.includes("sr."));
                         cols.alternate = r.findIndex(c => c.includes("alternate") || c.includes("alt"));
                         cols.srNum = r.findIndex(c => c.includes("sr. num") || c.includes("sr. no") || c.includes("s.no"));
-                        dataStartIdx = i + 1;
-                        break;
+                        dataStartIdx = i + 1; break;
                     }
                 }
-
-                // If not found, use default indices
                 if(cols.partCode === -1) { cols = { srNum: 0, partCode: 2, desc: 3, group: 4, qpa: 5, prio: 8 }; dataStartIdx = 1; }
 
                 for(let i = dataStartIdx; i < bomData.length; i++) {
                     let r = bomData[i];
                     if(r[cols.partCode]) {
                         let pK = cleanKey(r[cols.partCode]);
-                        if(pK === "COMPONENT/ITEMCODE") continue; // Skip redundant header row if detected as data
-
+                        if(pK === "COMPONENT/ITEMCODE" || pK === "ITEMCODE" || pK === "COMPONENT") continue;
                         let q = parseFloat(r[cols.qpa]) || 0, p = parseInt(r[cols.prio]) || 0;
                         let g = (cols.group > -1) ? String(r[cols.group] || "").trim() : "";
                         let alt = (cols.alternate > -1) ? String(r[cols.alternate] || "").trim() : "";
@@ -282,7 +280,6 @@
             } catch(e) {}
         }
 
-        // Generate dynamic table header
         let h = `<tr><th>Sr.</th><th>Prio</th><th>Group</th><th>Alternate</th><th>Part Code</th><th>Description</th><th>QPA</th><th>Required</th>`;
         activeLines.forEach(l => h += `<th>${l}</th>`);
         h += `<th>Total SAP Stock</th><th>Diff</th></tr>`;
@@ -293,37 +290,22 @@
 
         Object.keys(aggregatedParts).forEach((key) => {
             let item = aggregatedParts[key], lineSum = 0, globalSum = 0;
-            let groupStr = Array.from(item.groups).sort().join(", ");
-            let altStr = Array.from(item.alternates).sort().join(", ");
-
-            let rowObj = { "Sr.": item.d.bomSr || "-", "Prio": item.d.p, "Group": groupStr, "Alternate": altStr, "Part": item.d.o, "Desc": item.d.desc, "QPA": item.d.q, "Req": item.req.toFixed(1) };
-            
+            let rowObj = { "Sr.": item.d.bomSr || "-", "Prio": item.d.p, "Group": Array.from(item.groups).sort().join(", "), "Alternate": Array.from(item.alternates).sort().join(", "), "Part": item.d.o, "Desc": item.d.desc, "QPA": item.d.q, "Req": item.req.toFixed(1) };
             let lineStockHtml = '';
             activeLines.forEach(l => {
-                let s = (sapData[key] && sapData[key][l]) ? sapData[key][l] : 0;
-                lineSum += s; lineStockHtml += `<td>${s.toFixed(1)}</td>`; rowObj[l] = s.toFixed(1);
+                let s = (sapData[key] && sapData[key][l]) ? sapData[key][l] : 0; lineSum += s; lineStockHtml += `<td>${s.toFixed(1)}</td>`; rowObj[l] = s.toFixed(1);
             });
-
             if(sapData[key]) Object.values(sapData[key]).forEach(v => globalSum += v);
             let diff = lineSum - item.req, isR = (item.d.p === 0 || item.d.p === 1);
             rowObj["Total SAP Stock"] = globalSum.toFixed(1); rowObj["Diff"] = diff.toFixed(1);
             finalResults.push(rowObj);
-
-            tbody.innerHTML += `<tr class="${isR?'row-running':'row-alternate'}">
-                <td>${rowObj["Sr."]}</td><td>${item.d.p}</td><td>${groupStr}</td><td>${altStr}</td><td>${item.d.o}</td><td>${item.d.desc}</td><td>${item.d.q}</td><td>${rowObj.Req}</td>
-                ${lineStockHtml}<td>${globalSum.toFixed(1)}</td><td class="${diff<0?'val-negative':(isR?'val-positive':'')}">${diff.toFixed(1)}</td>
-            </tr>`;
+            tbody.innerHTML += `<tr class="${isR?'row-running':'row-alternate'}"><td>${rowObj["Sr."]}</td><td>${item.d.p}</td><td>${rowObj.Group}</td><td>${rowObj.Alternate}</td><td>${item.d.o}</td><td>${item.d.desc}</td><td>${item.d.q}</td><td>${rowObj.Req}</td>${lineStockHtml}<td>${globalSum.toFixed(1)}</td><td class="${diff<0?'val-negative':(isR?'val-positive':'')}">${diff.toFixed(1)}</td></tr>`;
         });
         document.getElementById('loader').style.display = 'none';
     }
 
     function sendToCloud(payload, msgId) { fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).then(() => { document.getElementById('loader').style.display = 'none'; document.getElementById(msgId).innerHTML = '<div class="alert alert-success">✅ Done!</div>'; }); }
-
-    function downloadExcel() {
-        if(!finalResults.length) return alert("Generate report first");
-        const ws = XLSX.utils.json_to_sheet(finalResults), wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Shortage_Report"); XLSX.writeFile(wb, "Production_Plan_Detailed.xlsx");
-    }
+    function downloadExcel() { if(!finalResults.length) return alert("Generate report first"); const ws = XLSX.utils.json_to_sheet(finalResults), wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Shortage_Report"); XLSX.writeFile(wb, "Production_Plan_Detailed.xlsx"); }
 </script>
 </body>
 </html>
